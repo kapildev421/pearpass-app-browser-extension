@@ -18,10 +18,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
-        #  token: ${{ secrets.PAT_TOKEN }}
 
       - name: Read & validate version
         id: meta
