@@ -2,13 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react'
 
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { Title, Text, Button } from '@tetherto/pearpass-lib-ui-kit'
-import { PasswordField } from '@tetherto/pearpass-lib-ui-kit/components/PasswordField'
+import {
+  Title,
+  Text,
+  Button,
+  PasswordField
+} from '@tetherto/pearpass-lib-ui-kit'
 
 import { useDesktopPairing } from '../../../../hooks/useDesktopPairing'
-// TODO : move to lib-ui-kit index
 
-// Opens the onboarding.html page in the current window or creates a new tab if it doesn't exist.
+// Opens onboarding.html in a tab.
+// If already open in another tab, focuses it instead of opening a new one.
 export async function openOnboardingPage() {
   const onboardingUrl = chrome.runtime.getURL('onboarding.html')
 
@@ -16,12 +20,15 @@ export async function openOnboardingPage() {
     active: true,
     currentWindow: true
   })
+
   const isCurrentTabOnboarding = currentTab?.url?.includes('onboarding.html')
+
   if (isCurrentTabOnboarding) return
 
   const allExtensionTabs = await chrome.tabs.query({
     url: chrome.runtime.getURL('*')
   })
+
   const existingOnboardingTab = allExtensionTabs.find((t) =>
     t.url?.includes('onboarding.html')
   )
@@ -47,9 +54,17 @@ export async function openOnboardingPage() {
  * @param {Object} props
  * @param {Function} props.onPairSuccess - Callback on successful pairing
  */
-export const PairingRequiredModalContentV2 = ({ onPairSuccess }) => {
+export const PairingRequiredModalContentV2 = ({
+  onPairSuccess
+}: {
+  onPairSuccess: () => void
+}) => {
   const [masterPassword, setMasterPassword] = useState('')
   const [missingToken, setMissingToken] = useState(false)
+
+  // TODO: useDesktopPairing — expose 'error' state to handle token validation failures,
+  //       either by showing a feedback message or redirecting to onboarding.
+  //       Currently useDesktopPairing is using setToast unde the hood.
 
   const {
     pairingToken,
@@ -64,7 +79,8 @@ export const PairingRequiredModalContentV2 = ({ onPairSuccess }) => {
     setStep: () => {} // No step in V2
   })
 
-  // 1. User inserts token on the onboarding.html page.
+  // Fetches the pairing token from localStorage, which is set
+  // when the user completes the token input on onboarding.html
   useEffect(() => {
     const token = localStorage.getItem('PendingPairingToken')
 
@@ -82,7 +98,7 @@ export const PairingRequiredModalContentV2 = ({ onPairSuccess }) => {
     }
   }, [pairingToken, setPairingToken])
 
-  // 2. Automatically fetch identity behind the scenes once the token is known
+  // Automatically fetch identity behind the scenes once the token is known
   useEffect(() => {
     if (pairingToken && !identity && !loading) {
       void fetchIdentity()
@@ -107,11 +123,7 @@ export const PairingRequiredModalContentV2 = ({ onPairSuccess }) => {
             <Title as="h1">
               <Trans>Insert Pairing Token</Trans>
             </Title>
-            <Text
-              variant="body"
-              className="text-grey200-mode1"
-              style={{ fontSize: '16px', opacity: 0.8, lineHeight: '24px' }}
-            >
+            <Text variant="body">
               <Trans>Navigating to onboarding page...</Trans>
             </Text>
           </header>
@@ -132,11 +144,7 @@ export const PairingRequiredModalContentV2 = ({ onPairSuccess }) => {
             <Title as="h1">
               <Trans>Enter Your Master Password</Trans>
             </Title>
-            <Text
-              variant="body"
-              className="text-grey200-mode1"
-              style={{ fontSize: '16px', opacity: 0.8, lineHeight: '24px' }}
-            >
+            <Text variant="body">
               <Trans>Enter your Master Password to complete the pairing</Trans>
             </Text>
           </header>

@@ -1,7 +1,12 @@
 import React from 'react'
 import { Button, Title, Text } from '@tetherto/pearpass-lib-ui-kit'
+import { DoneAll } from '@tetherto/pearpass-lib-ui-kit/icons'
 import { InlineDialog } from './InlineDialog'
-import { ONBOARDING_DIALOG_HEIGHT } from './constants'
+import {
+  ONBOARDING_DIALOG_HEIGHT,
+  ONBOARDING_ICON_COLOR,
+  ONBOARDING_ICON_SIZE
+} from './constants'
 
 export const Step3Dialog = () => {
   const handleNext = () => {
@@ -43,9 +48,51 @@ export const Step3Dialog = () => {
             <Text as="p" variant="body">
               You can autofill, save and generate passwords instantly.
             </Text>
-            <Text as="p" variant="body">
-              Browser connected, sync activated, autofill enabled.
-            </Text>
+            <div className="flex items-center justify-center gap-1">
+              <DoneAll
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text
+                as="span"
+                variant="body"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                style={{ color: ONBOARDING_ICON_COLOR } as any}
+              >
+                Browser connected
+              </Text>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <DoneAll
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text
+                as="span"
+                variant="body"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                style={{ color: ONBOARDING_ICON_COLOR } as any}
+              >
+                Sync activated
+              </Text>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <DoneAll
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text
+                as="span"
+                variant="body"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                style={{ color: ONBOARDING_ICON_COLOR } as any}
+              >
+                Autofill enabled
+              </Text>
+            </div>
           </div>
         </div>
       </div>

@@ -7,8 +7,17 @@ import {
   AlertMessage
 } from '@tetherto/pearpass-lib-ui-kit'
 import { InlineDialog } from './InlineDialog'
-import { ONBOARDING_DIALOG_HEIGHT } from './constants'
+import {
+  ONBOARDING_DIALOG_HEIGHT,
+  ONBOARDING_ICON_COLOR,
+  ONBOARDING_ICON_SIZE
+} from './constants'
 import { secureChannelMessages } from '../shared/services/messageBridge'
+import {
+  PearpassLogo,
+  Settings,
+  Swap
+} from '@tetherto/pearpass-lib-ui-kit/icons'
 
 interface Step2Props {
   onNext: () => void
@@ -50,7 +59,7 @@ export const Step2Dialog = ({ onNext }: Step2Props) => {
         onClick={handleConnect}
         disabled={!code.trim()}
       >
-        Connect
+        Connect Browser
       </Button>
     </div>
   )
@@ -76,16 +85,67 @@ export const Step2Dialog = ({ onNext }: Step2Props) => {
               Pearpass doesn't use accounts. To connect this browser you will
               pair it with the Pearpass app using a one-time code.
             </Text>
-            <Text as="p" variant="body">
-              Open the Pearpass app.
-            </Text>
-            <Text as="p" variant="body">
-              Go to settings → syncing → your devices.
-            </Text>
-            <Text as="p" variant="body">
-              Click on generate pair code for browser extension and enter code
-              below.
-            </Text>
+            <div className="flex items-center justify-center gap-1">
+              <Text as="span" variant="body">
+                1. Open the
+              </Text>
+              <PearpassLogo
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text
+                as="span"
+                variant="body"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                style={{ color: ONBOARDING_ICON_COLOR } as any}
+              >
+                Pearpass
+              </Text>
+              <Text as="span" variant="body">
+                app.
+              </Text>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <Text as="span" variant="body">
+                2. Go to
+              </Text>
+              <Settings
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text
+                as="span"
+                variant="body"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                style={{ color: ONBOARDING_ICON_COLOR } as any}
+              >
+                Settings → Syncing → Your Devices.
+              </Text>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <Text as="span" variant="body">
+                3. Click on
+              </Text>
+              <Swap
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text
+                as="span"
+                variant="body"
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                style={{ color: ONBOARDING_ICON_COLOR } as any}
+              >
+                Generate Pair Code for Browser Extension
+              </Text>
+              <Text as="span" variant="body">
+                {' '}
+                &amp; Enter Code Below
+              </Text>
+            </div>
           </div>
           <div className="w-full text-left">
             <InputField

@@ -1,7 +1,12 @@
 import React from 'react'
 import { Button, Title, Text } from '@tetherto/pearpass-lib-ui-kit'
 import { InlineDialog } from './InlineDialog'
-import { ONBOARDING_DIALOG_HEIGHT } from './constants'
+import {
+  ONBOARDING_DIALOG_HEIGHT,
+  ONBOARDING_ICON_COLOR,
+  ONBOARDING_ICON_SIZE
+} from './constants'
+import { Extension, PushPin } from '@tetherto/pearpass-lib-ui-kit/icons'
 
 interface Step1Props {
   onNext: () => void
@@ -9,7 +14,10 @@ interface Step1Props {
 
 export const Step1Dialog = ({ onNext }: Step1Props) => {
   const footer = (
-    <div className="flex w-full items-center justify-end">
+    <div className="flex w-full items-center justify-end gap-3">
+      <Button variant="secondary" size="medium" onClick={onNext}>
+        I will do it later
+      </Button>
       <Button variant="primary" size="medium" onClick={onNext}>
         Done
       </Button>
@@ -40,12 +48,32 @@ export const Step1Dialog = ({ onNext }: Step1Props) => {
               Keep Pearpass accessible in your toolbar for quick access to your
               items
             </Text>
-            <Text as="p" variant="body">
-              1. Click a puzzle icon in a toolbar
-            </Text>
-            <Text as="p" variant="body">
-              2. Click pin next to the Pearpass
-            </Text>
+            <div className="flex items-center justify-center gap-1">
+              <Text as="span" variant="body">
+                1. Click a
+              </Text>
+              <Extension
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text as="span" variant="body">
+                in a toolbar
+              </Text>
+            </div>
+            <div className="flex items-center justify-center gap-1">
+              <Text as="span" variant="body">
+                2. Click
+              </Text>
+              <PushPin
+                color={ONBOARDING_ICON_COLOR}
+                width={ONBOARDING_ICON_SIZE}
+                height={ONBOARDING_ICON_SIZE}
+              />
+              <Text as="span" variant="body">
+                next to a Pearpass
+              </Text>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
 
-import { AUTHENTICATOR_ENABLED } from 'pearpass-lib-constants'
+import { DESIGN_VERSION } from 'pearpass-lib-constants'
 
 import { client } from '../../../shared/client'
 import {
@@ -44,15 +44,15 @@ export const useBlockingState = () => {
     closeAllModals()
 
     const content =
-      AUTHENTICATOR_ENABLED === true ? (
+      DESIGN_VERSION === 2 ? (
         <PairingRequiredModalContentV2 onPairSuccess={onPairSuccess} />
       ) : (
-        // TODO: In the future when only version 2 is supported, this component should be deleted.
+        // TODO: Remove this component once version 2 is the only supported version.
         <PairingRequiredModalContent onPairSuccess={onPairSuccess} />
       )
 
     setModal(content, {
-      fullScreen: AUTHENTICATOR_ENABLED,
+      fullScreen: DESIGN_VERSION === 2,
       closeable: false
     })
   }, [closeAllModals, setModal, onPairSuccess])
