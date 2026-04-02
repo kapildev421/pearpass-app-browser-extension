@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react'
 
 import { t } from '@lingui/core/macro'
-import { useForm } from 'pear-apps-lib-ui-react-hooks'
-import { DATE_FORMAT } from 'pearpass-lib-constants'
+import { useForm } from '@tetherto/pear-apps-lib-ui-react-hooks'
+import { DATE_FORMAT } from '@tetherto/pearpass-lib-constants'
 
 import { CopyButton } from '../../../shared/components/CopyButton'
 import { FormGroup } from '../../../shared/components/FormGroup'
@@ -438,8 +438,8 @@ export const IdentityDetailsForm = ({ initialRecord }) => {
       <FormGroup>
         {hasNote && (
           <InputField
-            label={t`Note`}
-            placeholder={t`Add note`}
+            label={t`Comment`}
+            placeholder={t`Add comment`}
             variant="outline"
             icon={CommonFileIcon}
             additionalItems={<CopyButton value={values.note} />}

@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from 'react'
 
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { useForm } from 'pear-apps-lib-ui-react-hooks'
-import { isBefore, subtractDateUnits } from 'pear-apps-utils-date'
+import { useForm } from '@tetherto/pear-apps-lib-ui-react-hooks'
+import { isBefore, subtractDateUnits } from '@tetherto/pear-apps-utils-date'
 
 import { CardWarning } from '../../../shared/components/CardWarningText'
 import { CompoundField } from '../../../shared/components/CompoundField'
@@ -11,6 +11,7 @@ import { CopyButton } from '../../../shared/components/CopyButton'
 import { FormGroup } from '../../../shared/components/FormGroup'
 import { InputField } from '../../../shared/components/InputField'
 import { InputFieldPassword } from '../../../shared/components/InputFieldPassword'
+import { OtpCodeField } from '../../../shared/components/OtpCodeField'
 import { CommonFileIcon } from '../../../shared/icons/CommonFileIcon'
 import { KeyIcon } from '../../../shared/icons/KeyIcon'
 import { UserIcon } from '../../../shared/icons/UserIcon'
@@ -121,6 +122,15 @@ export const LoginDetailsForm = ({ initialRecord }) => {
         )}
       </FormGroup>
 
+      {!!initialRecord?.otpPublic && (
+        <FormGroup>
+          <OtpCodeField
+            recordId={initialRecord.id}
+            otpPublic={initialRecord.otpPublic}
+          />
+        </FormGroup>
+      )}
+
       {websitesList.length && (
         <CompoundField>
           {websitesList.map((website, index) => (
@@ -142,8 +152,8 @@ export const LoginDetailsForm = ({ initialRecord }) => {
       <FormGroup>
         {!!values.note?.length && (
           <InputField
-            label={t`Note`}
-            placeholder={t`Add note`}
+            label={t`Comment`}
+            placeholder={t`Add comment`}
             variant="outline"
             icon={CommonFileIcon}
             readonly

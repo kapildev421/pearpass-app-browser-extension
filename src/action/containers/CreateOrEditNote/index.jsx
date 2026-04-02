@@ -1,7 +1,11 @@
 import { t } from '@lingui/core/macro'
-import { useForm } from 'pear-apps-lib-ui-react-hooks'
-import { Validator } from 'pear-apps-utils-validator'
-import { RECORD_TYPES, useCreateRecord, useRecords } from 'pearpass-lib-vault'
+import { useForm } from '@tetherto/pear-apps-lib-ui-react-hooks'
+import { Validator } from '@tetherto/pear-apps-utils-validator'
+import {
+  RECORD_TYPES,
+  useCreateRecord,
+  useRecords
+} from '@tetherto/pearpass-lib-vault'
 
 import { FormGroup } from '../../../shared/components/FormGroup'
 import { InputField } from '../../../shared/components/InputField'
@@ -22,7 +26,7 @@ export const CreateOrEditNote = ({
     note: Validator.string(),
     customFields: Validator.array().items(
       Validator.object({
-        note: Validator.string().required(t`Note is required`)
+        note: Validator.string().required(t`Comment is required`)
       })
     ),
     folder: Validator.string()
@@ -106,7 +110,7 @@ export const CreateOrEditNote = ({
         </FormGroup>
 
         <FormGroup>
-          <TextArea {...register('note')} placeholder={t`Write a note...`} />
+          <TextArea {...register('note')} placeholder={t`Write a comment...`} />
         </FormGroup>
 
         <CustomFields

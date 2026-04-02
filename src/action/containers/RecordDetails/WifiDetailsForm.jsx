@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 
 import { t } from '@lingui/core/macro'
-import { useForm } from 'pear-apps-lib-ui-react-hooks'
+import { useForm } from '@tetherto/pear-apps-lib-ui-react-hooks'
 
 import { CopyButton } from '../../../shared/components/CopyButton'
 import { FormGroup } from '../../../shared/components/FormGroup'
@@ -67,8 +67,8 @@ export const WifiDetailsForm = ({ initialRecord }) => {
       <FormGroup>
         {!!values?.note?.length && (
           <InputField
-            label={t`Note`}
-            placeholder={t`Add note`}
+            label={t`Comment`}
+            placeholder={t`Add comment`}
             variant="outline"
             icon={CommonFileIcon}
             additionalItems={<CopyButton value={values.note} />}

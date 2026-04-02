@@ -1,8 +1,8 @@
 import { t } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
-import { useForm } from 'pear-apps-lib-ui-react-hooks'
-import { Validator } from 'pear-apps-utils-validator'
-import { useUserData, useVaults } from 'pearpass-lib-vault'
+import { useForm } from '@tetherto/pear-apps-lib-ui-react-hooks'
+import { Validator } from '@tetherto/pear-apps-utils-validator'
+import { useUserData, useVaults } from '@tetherto/pearpass-lib-vault'
 
 import { ButtonPrimary } from '../../../../shared/components/ButtonPrimary'
 import { CardWarning } from '../../../../shared/components/CardWarningText'
@@ -107,7 +107,7 @@ export const EnterMasterPassword = () => {
         password:
           typeof error === 'string'
             ? error
-            : t`Incorrect password. You have ${remainingAttempts} attempts before the app locks for 5 minutes.`
+            : t`Incorrect password. You have ${remainingAttempts} ${remainingAttempts === 1 ? 'attempt' : 'attempts'} before the app will be temporarily locked.`
       })
 
       logger.error('Error unlocking PearPass:', error)
