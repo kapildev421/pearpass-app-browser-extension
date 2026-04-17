@@ -1,0 +1,60 @@
+name: Authorize PR
+description: >
+  Security gate for pull_request_target workflows. Allows PR CI only for
+  trusted contributors so repository secrets can be used safely with PR code.
+
+inputs:
+  github-token:
+    description: GitHub token used to inspect the triggering actor permission
+    required: true
+
+outputs:
+  allowed:
+    description: true when the workflow is authorized to proceed
+    value: ${{ steps.check.outputs.allowed }}
+  has_write:
+    description: 1 when the triggering actor has write-or-higher repo permission
+    value: ${{ steps.perm.outputs.has-permission }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check actor write permission
+      id: perm
+      uses: scherermichael-oss/action-has-permission@136e061bfe093832d87f090dd768e14e27a740d3 # 1.0.6
+      with:
+        required-permission: write
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+
+    - name: Check authorization
+      id: check
+      shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+        HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        BASE_REPO: ${{ github.repository }}
+        AUTHOR_ASSOC: ${{ github.event.pull_request.author_association }}
+        HAS_WRITE: ${{ steps.perm.outputs.has-permission }}
+      run: |
+        if [ "$EVENT" != "pull_request_target" ] && [ "$EVENT" != "pull_request" ]; then
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        if [ "$HEAD_REPO" = "$BASE_REPO" ]; then
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        if [ "$HAS_WRITE" = "1" ]; then
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        if [[ "$AUTHOR_ASSOC" =~ ^(MEMBER|OWNER|COLLABORATOR)$ ]]; then
+          echo "allowed=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "allowed=false" >> "$GITHUB_OUTPUT"

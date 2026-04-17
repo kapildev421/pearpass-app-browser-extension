@@ -1,0 +1,21 @@
+name: Push CI
+
+on:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: push-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci-reusable.yml
+    with:
+      checkout_ref: ${{ github.sha }}
+      checkout_repository: ${{ github.repository }}
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
