@@ -12,7 +12,7 @@ import {
 import {
   AlertMessage,
   Button,
-  DialogSurface,
+  Dialog,
   Form,
   InputField
 } from '@tetherto/pearpass-lib-ui-kit'
@@ -164,7 +164,7 @@ export const CreateOrEditVaultModalContentV2 = ({
 
   return (
     <div className="border-border-primary bg-surface-primary w-[500px] overflow-y-auto rounded-[8px] border">
-      <DialogSurface
+      <Dialog
         title={title}
         onClose={onClose}
         testID="create-or-edit-vault-dialog"
@@ -219,7 +219,7 @@ export const CreateOrEditVaultModalContentV2 = ({
             />
           </div>
         </Form>
-      </DialogSurface>
+      </Dialog>
     </div>
   )
 }
