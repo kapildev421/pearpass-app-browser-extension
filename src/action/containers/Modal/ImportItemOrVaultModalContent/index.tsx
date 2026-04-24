@@ -11,20 +11,10 @@ import { useToast } from '../../../../shared/context/ToastContext'
 import { logger } from '../../../../shared/utils/logger'
 
 import { ShareLinkEntryContent } from './ShareLinkEntryContent'
+import type { PreviewRecord } from './types'
 import { VaultFoundPreviewContent } from './VaultFoundPreviewContent'
 
 type Step = 'entry' | 'preview'
-
-type PreviewRecord = {
-  id: string
-  type: string
-  data?: {
-    title?: string
-    username?: string
-    email?: string
-    websites?: Array<string | { website?: string }>
-  }
-}
 
 export type ImportItemOrVaultModalContentProps = {
   onClose: () => void

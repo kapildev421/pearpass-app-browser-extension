@@ -1,19 +1,10 @@
 import { useState } from 'react'
 
-import { t } from '@lingui/core/macro'
+import { plural, t } from '@lingui/core/macro'
 import { ListItem, Text, useTheme } from '@tetherto/pearpass-lib-ui-kit'
 import { ExpandMore, LockOutlined } from '@tetherto/pearpass-lib-ui-kit/icons'
 
-type PreviewRecord = {
-  id: string
-  type: string
-  data?: {
-    title?: string
-    username?: string
-    email?: string
-    websites?: Array<string | { website?: string }>
-  }
-}
+import type { PreviewRecord } from './types'
 
 export type VaultFoundPreviewContentProps = {
   vaultName?: string
@@ -46,8 +37,10 @@ export const VaultFoundPreviewContent = ({
   const [isExpanded, setIsExpanded] = useState(true)
 
   const itemCount = records.length
-  const countLabel =
-    itemCount === 1 ? t`${itemCount} Item` : t`${itemCount} Items`
+  const countLabel = plural(itemCount, {
+    one: '# Item',
+    other: '# Items'
+  })
   const subtitle = vaultRole ? `${countLabel}  ·  ${vaultRole}` : countLabel
 
   const hasRecords = itemCount > 0
