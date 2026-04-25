@@ -227,6 +227,8 @@ declare module '@tetherto/pearpass-lib-vault' {
   export function useRecordCountsByType(): UseRecordCountsByTypeResult
 
   export const closeAllInstances: () => Promise<void>
+
+  export function vaultGetFile(path: string): Promise<unknown>
 }
 
 declare module '@tetherto/pearpass-lib-constants' {

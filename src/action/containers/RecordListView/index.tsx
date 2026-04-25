@@ -1,4 +1,5 @@
-import { Fragment, useCallback, useMemo, useState } from 'react'
+import type { MouseEvent } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { t } from '@lingui/core/macro'
 import { ListItem, useTheme } from '@tetherto/pearpass-lib-ui-kit'
@@ -9,6 +10,7 @@ import {
 } from '@tetherto/pearpass-lib-ui-kit/icons'
 
 import { createStyles } from './RecordListViewV2.styles'
+import { RecordRowContextMenu } from './RecordRowContextMenu'
 import { useRouter } from '../../../shared/context/RouterContext'
 import { RecordItemIcon } from '../../../shared/containers/RecordItemIcon'
 import { getRecordSubtitle } from '../../../shared/utils/getRecordSubtitle'
@@ -17,6 +19,8 @@ import type {
   VaultRecord
 } from '../../../shared/utils/groupRecordsByTimePeriod'
 
+const ROW_RECORD_ID_ATTR = 'data-record-id'
+
 type RecordListViewV2Props = {
   sections: RecordSection[]
   isMultiSelectOn?: boolean
@@ -24,6 +28,12 @@ type RecordListViewV2Props = {
   setSelectedRecords?: (
     updater: string[] | ((prev: string[]) => string[])
   ) => void
+  setIsMultiSelectOn?: (value: boolean) => void
+}
+
+type ActiveContextMenu = {
+  record: VaultRecord
+  position: { x: number; y: number }
 }
 
 const SECTION_TITLE_KEYS: Record<string, string> = {
@@ -61,7 +71,8 @@ export const RecordListViewV2 = ({
   sections,
   isMultiSelectOn = false,
   selectedRecords = [],
-  setSelectedRecords
+  setSelectedRecords,
+  setIsMultiSelectOn
 }: RecordListViewV2Props) => {
   const { theme } = useTheme()
   const { navigate } = useRouter() as {
@@ -78,6 +89,9 @@ export const RecordListViewV2 = ({
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({})
+  const [activeMenu, setActiveMenu] = useState<ActiveContextMenu | null>(null)
+
+  const allRecords = useMemo(() => sections.flatMap((s) => s.data), [sections])
 
   const toggleSection = useCallback((key: string) => {
     setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -104,6 +118,58 @@ export const RecordListViewV2 = ({
     },
     [isMultiSelectOn, setSelectedRecords, navigate]
   )
+
+  const handleEnterMultiSelect = useCallback(
+    (record: VaultRecord) => {
+      setSelectedRecords?.((prev) =>
+        prev.includes(record.id) ? prev : [...prev, record.id]
+      )
+      setIsMultiSelectOn?.(true)
+    },
+    [setIsMultiSelectOn, setSelectedRecords]
+  )
+
+  const handleRowContextMenu = useCallback(
+    (event: MouseEvent, record: VaultRecord) => {
+      if (isMultiSelectOn) return
+      event.preventDefault()
+      setActiveMenu({
+        record,
+        position: { x: event.clientX, y: event.clientY }
+      })
+    },
+    [isMultiSelectOn]
+  )
+
+  // The overlay covers rows while open; re-target right-clicks via the
+  // element stack at the cursor.
+  useEffect(() => {
+    if (!activeMenu) return
+    const handler = (event: globalThis.MouseEvent) => {
+      event.preventDefault()
+      const stack = document.elementsFromPoint(event.clientX, event.clientY)
+      let recordId: string | null = null
+      for (const el of stack) {
+        const row = (el as HTMLElement).closest?.(
+          `[${ROW_RECORD_ID_ATTR}]`
+        ) as HTMLElement | null
+        if (row) {
+          recordId = row.getAttribute(ROW_RECORD_ID_ATTR)
+          break
+        }
+      }
+      const next = recordId
+        ? allRecords.find((r) => r.id === recordId)
+        : undefined
+      setActiveMenu(
+        next
+          ? { record: next, position: { x: event.clientX, y: event.clientY } }
+          : null
+      )
+    }
+    document.addEventListener('contextmenu', handler, true)
+    return () => document.removeEventListener('contextmenu', handler, true)
+  }, [activeMenu, allRecords])
 
   const iconColor = theme.colors.colorTextSecondary
   const alertColor = theme.colors.colorSurfaceDestructiveElevated
@@ -148,43 +214,50 @@ export const RecordListViewV2 = ({
                     {section.data.map((record) => {
                       const isSelected = selectedRecordsSet.has(record.id)
                       return (
-                        <ListItem
+                        <div
                           key={record.id}
-                          icon={<RecordItemIcon record={record} />}
-                          iconSize={32}
-                          title={record.data?.title ?? ''}
-                          subtitle={getRecordSubtitle(record) || undefined}
-                          selectionMode={isMultiSelectOn ? 'multi' : 'none'}
-                          isSelected={isSelected}
-                          onSelect={() => handleRecordPress(record)}
-                          onClick={() => handleRecordPress(record)}
-                          testID={`record-list-item-${record.id}`}
-                          style={
-                            styles.recordRow as React.ComponentProps<
-                              typeof ListItem
-                            >['style']
+                          {...{ [ROW_RECORD_ID_ATTR]: record.id }}
+                          onContextMenu={(event) =>
+                            handleRowContextMenu(event, record)
                           }
-                          rightElement={
-                            !isMultiSelectOn ? (
-                              <div style={styles.rowRightElement}>
-                                {record.hasSecurityAlert && (
-                                  <ErrorFilled
-                                    width={20}
-                                    height={20}
-                                    color={alertColor}
-                                  />
-                                )}
-                                <div style={styles.rowChevron}>
-                                  <ExpandMore
-                                    width={20}
-                                    height={20}
-                                    color={iconColor}
-                                  />
+                        >
+                          <ListItem
+                            icon={<RecordItemIcon record={record} />}
+                            iconSize={32}
+                            title={record.data?.title ?? ''}
+                            subtitle={getRecordSubtitle(record) || undefined}
+                            selectionMode={isMultiSelectOn ? 'multi' : 'none'}
+                            isSelected={isSelected}
+                            onSelect={() => handleRecordPress(record)}
+                            onClick={() => handleRecordPress(record)}
+                            testID={`record-list-item-${record.id}`}
+                            style={
+                              styles.recordRow as React.ComponentProps<
+                                typeof ListItem
+                              >['style']
+                            }
+                            rightElement={
+                              !isMultiSelectOn ? (
+                                <div style={styles.rowRightElement}>
+                                  {record.hasSecurityAlert && (
+                                    <ErrorFilled
+                                      width={20}
+                                      height={20}
+                                      color={alertColor}
+                                    />
+                                  )}
+                                  <div style={styles.rowChevron}>
+                                    <ExpandMore
+                                      width={20}
+                                      height={20}
+                                      color={iconColor}
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                            ) : undefined
-                          }
-                        />
+                              ) : undefined
+                            }
+                          />
+                        </div>
                       )
                     })}
                   </div>
@@ -203,6 +276,22 @@ export const RecordListViewV2 = ({
       </div>
 
       <div style={styles.fadeGradient} aria-hidden="true" />
+
+      {activeMenu && (
+        <RecordRowContextMenu
+          key={activeMenu.record.id}
+          record={activeMenu.record}
+          position={activeMenu.position}
+          isOpen
+          onOpenChange={(open) => {
+            if (!open) setActiveMenu(null)
+          }}
+          onSelectItem={() => {
+            handleEnterMultiSelect(activeMenu.record)
+            setActiveMenu(null)
+          }}
+        />
+      )}
     </div>
   )
 }

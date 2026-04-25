@@ -157,6 +157,7 @@ export const RecordListV2 = () => {
               isMultiSelectOn={isMultiSelectOn}
               selectedRecords={selectedRecords}
               setSelectedRecords={setSelectedRecords}
+              setIsMultiSelectOn={setIsMultiSelectOn}
             />
           )}
 
