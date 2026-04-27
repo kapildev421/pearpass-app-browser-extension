@@ -46,13 +46,11 @@ export const CreateFolderModalContentV2 = ({
     title: Validator.string()
       .required(t`Title is required`)
       .refine((value: string): string | null => {
-        if (isRename && value === initialValues?.title) {
+        const candidate = value.trim()
+        if (isRename && candidate === initialValues?.title) {
           return null
         }
-        const isDuplicate = customFolders.some(
-          (folder) => folder.name === value
-        )
-        if (isDuplicate) {
+        if (customFolders.some((folder) => folder.name === candidate)) {
           return t`Folder already exists`
         }
         return null

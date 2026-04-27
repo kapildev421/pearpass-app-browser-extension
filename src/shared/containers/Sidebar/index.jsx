@@ -16,7 +16,7 @@ import { NAVIGATION_ROUTES } from '../../constants/navigation'
 import { ConfirmationModalContent } from '../../containers/ConfirmationModalContent'
 import { CreateFolderModalContent } from '../../containers/CreateFolderModalContent'
 import { CreateFolderModalContentV2 } from '../../containers/CreateFolderModalContentV2'
-import { DeleteFolderModalContentV2 } from '../../containers/DeleteFolderModalContentV2'
+import { DeleteFolderModalContent } from '../../containers/DeleteFolderModalContent'
 import { useLoadingContext } from '../../context/LoadingContext'
 import { useModal } from '../../context/ModalContext'
 import { useRouter } from '../../context/RouterContext'
@@ -153,13 +153,13 @@ export const Sidebar = ({ isOpen, onClose, width = '280px' }) => {
           const count = folderRecords.filter((r) => !!r.data && !!r.type).length
           if (count === 0) {
             void deleteFolder(folder.id)
-            if (state?.folder === folder.id) {
+            if (state.folder === folder.id) {
               navigate('vault', { state: { recordType: 'all' } })
             }
             return
           }
           setModal(
-            <DeleteFolderModalContentV2
+            <DeleteFolderModalContent
               folderName={folder.id}
               count={count}
               onClose={closeModal}

@@ -7,7 +7,22 @@ declare module '@tetherto/pear-apps-utils-avatar-initials' {
 }
 declare module '@tetherto/pear-apps-utils-qr'
 declare module '@tetherto/pear-apps-utils-date'
-declare module '@tetherto/pearpass-lib-constants'
+declare module '@tetherto/pearpass-lib-constants' {
+  export const UNSUPPORTED: boolean
+  export const EXTENSION_DESIGN_VERSION: number
+  export const AUTHENTICATOR_ENABLED: boolean
+  export const PROTECTED_VAULT_ENABLED: boolean
+  export const SAVE_CREDENTIALS_AFTER_LOGIN_ENABLED: boolean
+  export const CLIPBOARD_CLEAR_TIMEOUT: number
+  export const LANGUAGES: Record<string, string>
+  export const MANIFEST_NAME: string
+  export const MS_PER_SECOND: number
+  export const FIREFOX_EXTENSION_ID: string
+  export const PRIVACY_POLICY: string
+  export const TERMS_OF_USE: string
+  export const DATE_FORMAT: string
+  export const PASSPHRASE_TYPE_OPTIONS: unknown
+}
 declare module '@tetherto/pearpass-lib-vault' {
   export interface VaultDevice {
     id?: string

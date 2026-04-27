@@ -9,7 +9,13 @@ import { useModal } from '../../context/ModalContext'
 import { useRouter } from '../../context/RouterContext'
 import { logger } from '../../utils/logger'
 
-interface DeleteFolderModalContentV2Props {
+type RouterState = { folder?: string; recordType?: string }
+type RouterNavigateArg = {
+  params?: Record<string, unknown>
+  state?: RouterState
+}
+
+interface DeleteFolderModalContentProps {
   folderName: string
   count: number
   onClose: () => void
@@ -20,13 +26,16 @@ enum DeleteOption {
   DeleteFolderAndItems = 'deleteFolderAndItems'
 }
 
-export const DeleteFolderModalContentV2 = ({
+export const DeleteFolderModalContent = ({
   folderName,
   count,
   onClose
-}: DeleteFolderModalContentV2Props) => {
+}: DeleteFolderModalContentProps) => {
   const { closeModal } = useModal()
-  const { state, navigate } = useRouter()
+  const { state, navigate } = useRouter() as {
+    state: RouterState
+    navigate: (page: string, arg: RouterNavigateArg) => void
+  }
   const { deleteFolder, data: folderData } = useFolders()
   const { updateRecords } = useRecords()
 
@@ -36,14 +45,8 @@ export const DeleteFolderModalContentV2 = ({
   const [isLoading, setIsLoading] = useState(false)
 
   const navigateAwayIfNeeded = () => {
-    if ((state as { folder?: string } | undefined)?.folder === folderName) {
-      navigate('vault', {
-        params: {},
-        state: { recordType: 'all' }
-      } as {
-        params: Record<string, unknown>
-        state: { recordType: string; folder?: string }
-      })
+    if (state.folder === folderName) {
+      navigate('vault', { state: { recordType: 'all' } })
     }
   }
 
@@ -61,11 +64,7 @@ export const DeleteFolderModalContentV2 = ({
       navigateAwayIfNeeded()
       void closeModal()
     } catch (error) {
-      logger.error(
-        'DeleteFolderModalContentV2',
-        'Error deleting folder:',
-        error
-      )
+      logger.error('DeleteFolderModalContent', 'Error deleting folder:', error)
     } finally {
       setIsLoading(false)
     }
@@ -95,8 +94,8 @@ export const DeleteFolderModalContentV2 = ({
     <Dialog
       title={t`Delete Folder`}
       onClose={onClose}
-      testID="deletefolder-dialog-v2"
-      closeButtonTestID="deletefolder-close-v2"
+      testID="deletefolder-dialog"
+      closeButtonTestID="deletefolder-close"
       footer={
         <div className="flex w-full justify-end gap-[var(--spacing8)]">
           <Button
@@ -104,7 +103,7 @@ export const DeleteFolderModalContentV2 = ({
             size="small"
             type="button"
             onClick={onClose}
-            data-testid="deletefolder-discard-v2"
+            data-testid="deletefolder-discard"
           >
             {t`Discard`}
           </Button>
@@ -117,7 +116,7 @@ export const DeleteFolderModalContentV2 = ({
               onClick={() => {
                 void handleDelete()
               }}
-              data-testid="deletefolder-submit-v2"
+              data-testid="deletefolder-submit"
             >
               {t`Delete Folder`}
             </Button>
@@ -130,7 +129,7 @@ export const DeleteFolderModalContentV2 = ({
               onClick={() => {
                 void handleDelete()
               }}
-              data-testid="deletefolder-submit-v2"
+              data-testid="deletefolder-submit"
             >
               {t`Delete Folder and Items`}
             </Button>
@@ -142,7 +141,7 @@ export const DeleteFolderModalContentV2 = ({
         options={options}
         value={selected}
         onChange={(v) => setSelected(v as DeleteOption)}
-        testID="deletefolder-options-v2"
+        testID="deletefolder-options"
       />
     </Dialog>
   )
