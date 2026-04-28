@@ -6,14 +6,22 @@ import { Sync } from '@tetherto/pearpass-lib-ui-kit/icons'
 
 const TEST_IDS = {
   root: 'syncing-failed-modal',
-  retryButton: 'syncing-failed-modal-retry'
+  retryButton: 'syncing-failed-modal-retry',
+  cancelButton: 'syncing-failed-modal-cancel',
+  errorDetail: 'syncing-failed-modal-error-detail'
 } as const
 
 interface SyncingFailedModalProps {
   onRetry: () => void | Promise<void>
+  onCancel?: () => void
+  errorMessage?: string
 }
 
-export const SyncingFailedModal = ({ onRetry }: SyncingFailedModalProps) => {
+export const SyncingFailedModal = ({
+  onRetry,
+  onCancel,
+  errorMessage
+}: SyncingFailedModalProps) => {
   const { theme } = useTheme()
   const { colors } = theme
 
@@ -32,9 +40,9 @@ export const SyncingFailedModal = ({ onRetry }: SyncingFailedModalProps) => {
   return (
     <div
       data-testid={TEST_IDS.root}
-      className="bg-surface-primary flex w-full max-w-[500px] flex-col gap-[24px] rounded-[8px] p-[24px]"
+      className="bg-surface-primary flex w-full max-w-[500px] flex-col gap-[var(--spacing24)] rounded-[var(--radius8)] p-[var(--spacing24)]"
     >
-      <div className="flex flex-col items-center gap-[8px] text-center">
+      <div className="flex flex-col items-center gap-[var(--spacing8)] text-center">
         <Title as="h2">
           <Trans>Syncing Failed</Trans>
         </Title>
@@ -43,8 +51,28 @@ export const SyncingFailedModal = ({ onRetry }: SyncingFailedModalProps) => {
             Ensure the PearPass desktop app is open and Browser Sync is enabled.
           </Trans>
         </Text>
+        {errorMessage && (
+          <Text
+            variant="caption"
+            color={colors.colorTextTertiary}
+            data-testid={TEST_IDS.errorDetail}
+          >
+            {errorMessage}
+          </Text>
+        )}
       </div>
-      <div className="flex w-full items-center justify-end">
+      <div className="flex w-full items-center justify-end gap-[var(--spacing8)]">
+        {onCancel && (
+          <Button
+            variant="secondary"
+            size="medium"
+            onClick={onCancel}
+            disabled={loading}
+            data-testid={TEST_IDS.cancelButton}
+          >
+            <Trans>Re-enter code</Trans>
+          </Button>
+        )}
         <Button
           variant="primary"
           size="medium"

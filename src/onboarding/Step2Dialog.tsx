@@ -28,7 +28,16 @@ export const Step2Dialog = ({ onNext }: Step2Props) => {
   const accentColor = theme.colors.colorLinkText
 
   const [code, setCode] = useState('')
-  const [hasSyncFailed, setHasSyncFailed] = useState(false)
+  const [syncErrorMessage, setSyncErrorMessage] = useState<string | null>(null)
+
+  const extractErrorMessage = (err: unknown): string => {
+    if (typeof err === 'string') return err
+    if (err && typeof err === 'object' && 'message' in err) {
+      const msg = (err as { message?: unknown }).message
+      if (typeof msg === 'string' && msg.length > 0) return msg
+    }
+    return t`Failed to get identity. Please try again.`
+  }
 
   const handleConnect = async () => {
     const trimmed = code.trim()
@@ -37,21 +46,35 @@ export const Step2Dialog = ({ onNext }: Step2Props) => {
       const res = await secureChannelMessages.getIdentity(trimmed)
       if (res?.success) {
         await pendingPairingStore.set(trimmed)
-        setHasSyncFailed(false)
+        setSyncErrorMessage(null)
         onNext()
       } else {
         await pendingPairingStore.clear()
-        setHasSyncFailed(true)
+        const upstreamError =
+          res && typeof res === 'object' && 'error' in res
+            ? (res as { error?: unknown }).error
+            : undefined
+        setSyncErrorMessage(
+          typeof upstreamError === 'string' && upstreamError.length > 0
+            ? upstreamError
+            : t`Failed to get identity. Please try again.`
+        )
       }
     } catch (err: unknown) {
       console.error('Failed to get identity:', err)
       await pendingPairingStore.clear()
-      setHasSyncFailed(true)
+      setSyncErrorMessage(extractErrorMessage(err))
     }
   }
 
-  if (hasSyncFailed) {
-    return <SyncingFailedModal onRetry={handleConnect} />
+  if (syncErrorMessage !== null) {
+    return (
+      <SyncingFailedModal
+        onRetry={handleConnect}
+        onCancel={() => setSyncErrorMessage(null)}
+        errorMessage={syncErrorMessage}
+      />
+    )
   }
 
   return (

@@ -63,10 +63,11 @@ export const DesktopConnectionModalContentV2 = ({
     <Dialog
       title={t`Desktop app required`}
       onClose={handleClose}
+      closeOnOutsideClick={false}
       testID={TEST_IDS.root}
       closeButtonTestID={TEST_IDS.closeButton}
       footer={
-        <div className="flex w-full items-center justify-end gap-[8px]">
+        <div className="flex w-full items-center justify-end gap-[var(--spacing8)]">
           <Button
             variant="secondary"
             size="small"
