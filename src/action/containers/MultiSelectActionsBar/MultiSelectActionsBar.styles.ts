@@ -31,6 +31,23 @@ export const createStyles = (colors: ThemeColors) => ({
     flexShrink: 0
   },
 
+  buttonWrapper: {
+    position: 'relative' as const,
+    display: 'inline-flex' as const
+  },
+
+  tooltip: {
+    // Right-anchor so the tooltip grows leftward into the screen — the actions
+    // bar sits at the right edge, and centered tooltips overflow the viewport.
+    position: 'absolute' as const,
+    top: '100%',
+    right: 0,
+    transform: 'translateY(6px)',
+    zIndex: 10,
+    pointerEvents: 'none' as const,
+    whiteSpace: 'nowrap' as const
+  },
+
   destructiveDivider: {
     width: '1px',
     height: '12px',
