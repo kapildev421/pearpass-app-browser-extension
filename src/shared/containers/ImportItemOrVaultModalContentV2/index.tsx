@@ -25,9 +25,32 @@ import { useToast } from '../../context/ToastContext'
 import { useAutoLockPreferences } from '../../../hooks/useAutoLockPreferences'
 import { logger } from '../../utils/logger'
 
-const getPlatformInfo = (): Promise<{ os: string; arch: string }> =>
+const getPlatformInfo = (): Promise<{ os: string; arch: string } | null> =>
   new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: 'GET_PLATFORM_INFO' }, resolve)
+    try {
+      chrome.runtime.sendMessage(
+        { type: 'GET_PLATFORM_INFO' },
+        (response: { os?: string; arch?: string } | undefined) => {
+          if (chrome.runtime.lastError || !response?.os) {
+            logger.error(
+              'ImportItemOrVaultModalContentV2',
+              'Failed to get platform info',
+              chrome.runtime.lastError
+            )
+            resolve(null)
+            return
+          }
+          resolve({ os: response.os, arch: response.arch ?? '' })
+        }
+      )
+    } catch (error) {
+      logger.error(
+        'ImportItemOrVaultModalContentV2',
+        'Failed to send platform info request',
+        error
+      )
+      resolve(null)
+    }
   })
 
 export const ImportItemOrVaultModalContentV2 = () => {
@@ -86,7 +109,10 @@ export const ImportItemOrVaultModalContentV2 = () => {
         await refetchVault(vaultId)
 
         const platform = await getPlatformInfo()
-        await addDevice(`${platform.os} ${platform.arch}`)
+        const host = platform
+          ? `${platform.os} ${platform.arch}`.trim()
+          : 'unknown'
+        await addDevice(host)
 
         closeAllModals()
         setModal(<ImportVaultPreviewModalContent />)

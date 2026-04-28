@@ -26,7 +26,7 @@ export const createStyles = (colors: ThemeColors) => ({
 
   sidebarToggle: (isCollapsed: boolean) => ({
     display: 'flex' as const,
-    rotate: `${isCollapsed ? 180 : 0}deg`
+    transform: `rotate(${isCollapsed ? 180 : 0}deg)`
   }),
 
   searchWrap: {
