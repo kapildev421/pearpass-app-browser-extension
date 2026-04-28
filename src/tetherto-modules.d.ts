@@ -22,6 +22,14 @@ declare module '@tetherto/pearpass-lib-constants' {
   export const TERMS_OF_USE: string
   export const DATE_FORMAT: string
   export const PASSPHRASE_TYPE_OPTIONS: unknown
+  export const PASSPHRASE_WORD_COUNTS: {
+    STANDARD_12: number
+    WITH_RANDOM_12: number
+    STANDARD_24: number
+    WITH_RANDOM_24: number
+  }
+  export const VALID_WORD_COUNTS: number[]
+  export const DEFAULT_SELECTED_TYPE: number
 }
 declare module '@tetherto/pearpass-lib-vault' {
   export interface VaultDevice {
