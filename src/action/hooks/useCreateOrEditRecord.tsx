@@ -57,8 +57,18 @@ export const useCreateOrEditRecord = () => {
       setValue
     } = options
 
-    if (isV2() && recordType === PASSWORD_TYPE) {
-      setModal(<GeneratePasswordModalContentV2 onPasswordInsert={setValue} />)
+    // `recordType: 'password'` is a v2-only menu shortcut — the action
+    // popup's "+" picker uses it for "Generate Password". The v1 path
+    // doesn't share this affordance from inside the hook: callers that
+    // still need a v1 password generator (today only RecordList's v1 +
+    // picker) open `<PasswordGeneratorModalContent />` inline. So when
+    // `!isV2()`, the hook intentionally no-ops here and lets the caller
+    // handle it. Don't degrade to navigate('createOrEditCategory') —
+    // there's no "password" record type at the route layer.
+    if (recordType === PASSWORD_TYPE) {
+      if (isV2()) {
+        setModal(<GeneratePasswordModalContentV2 onPasswordInsert={setValue} />)
+      }
       return
     }
 
@@ -90,11 +100,19 @@ export const useCreateOrEditRecord = () => {
 
     // v1 fallback — mirror the existing call sites: edit uses recordId,
     // create uses recordType. Don't send both, the v1 route resolves the
-    // record's type internally via useRecordById in edit mode.
+    // record's type internally via useRecordById in edit mode. Carry
+    // selectedFolder + isFavorite through so the v1 form can prefill them
+    // (the v1 AppHeader picker used to pass these via params; preserve
+    // parity for any caller that still hits this branch).
+    const folderParam = selectedFolder ? { folder: selectedFolder } : {}
+    const favoriteParam = isFavorite ? { isFavorite: true } : {}
+
     if (initialRecord?.id) {
       navigate('createOrEditCategory', {
         params: {
           recordId: initialRecord.id,
+          ...folderParam,
+          ...favoriteParam,
           ...(source ? { source } : {})
         }
       })
@@ -104,6 +122,8 @@ export const useCreateOrEditRecord = () => {
     navigate('createOrEditCategory', {
       params: {
         ...(recordType ? { recordType } : {}),
+        ...folderParam,
+        ...favoriteParam,
         ...(source ? { source } : {})
       }
     })

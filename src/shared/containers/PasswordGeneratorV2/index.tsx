@@ -198,7 +198,7 @@ export const PasswordGeneratorV2 = ({
           {t`Generated Password`}
         </Text>
 
-        <div className="border-border-primary flex flex-col overflow-hidden rounded-[12px] border">
+        <div className="border-border-primary flex flex-col overflow-hidden rounded-[var(--radius8)] border">
           <div className="border-border-primary flex flex-col items-center gap-[var(--spacing16)] border-b px-[var(--spacing16)] py-[var(--spacing24)]">
             <div className="w-full min-w-0 text-center break-words">
               <Title as="h3">
@@ -213,10 +213,13 @@ export const PasswordGeneratorV2 = ({
           </div>
 
           {modeOptions.map((option, index) => (
+            // Outer div is a styling container (padding + divider). The
+            // inner Radio is the only accessible control — its built-in
+            // keyboard handling drives the selection. The div onClick just
+            // extends the visual hit area; clicking it bubbles into
+            // Radio.onChange (calls below) so behavior stays single-source.
             <div
               key={option.key}
-              role="button"
-              tabIndex={0}
               className={[
                 'cursor-pointer p-[var(--spacing12)]',
                 index < modeOptions.length - 1
@@ -226,12 +229,6 @@ export const PasswordGeneratorV2 = ({
                 .filter(Boolean)
                 .join(' ')}
               onClick={() => setMode(option.key)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  setMode(option.key)
-                }
-              }}
             >
               <Radio
                 builtIn
@@ -255,7 +252,7 @@ export const PasswordGeneratorV2 = ({
           {t`Password Length`}
         </Text>
 
-        <div className="border-border-primary flex min-h-[41px] items-center justify-between gap-3 rounded-[12px] border px-[var(--spacing12)] py-[var(--spacing8)]">
+        <div className="border-border-primary flex min-h-[41px] items-center justify-between gap-[var(--spacing12)] rounded-[var(--radius8)] border px-[var(--spacing12)] py-[var(--spacing8)]">
           <Text as="span" variant="labelEmphasized">
             {mode === MODE_MEMORABLE
               ? `${memorable.words} ${t`Words`}`
@@ -297,7 +294,7 @@ export const PasswordGeneratorV2 = ({
           {t`Password settings`}
         </Text>
 
-        <div className="border-border-primary flex flex-col overflow-hidden rounded-[12px] border">
+        <div className="border-border-primary flex flex-col overflow-hidden rounded-[var(--radius8)] border">
           {mode === MODE_MEMORABLE ? (
             memorableSettings.map((setting, index) => (
               <div
