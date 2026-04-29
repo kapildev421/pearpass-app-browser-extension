@@ -26,11 +26,11 @@ import {
 import { useCreateRecord, vaultGetFile } from '@tetherto/pearpass-lib-vault'
 
 import { useModal } from '../../../shared/context/ModalContext'
-import { useRouter } from '../../../shared/context/RouterContext'
 import { DeleteRecordsModalContentV2 } from '../../../shared/containers/DeleteRecordsModalContentV2'
 import { MoveFolderModalContentV2 } from '../../../shared/containers/MoveFolderModalContentV2'
 import { useRecordActionItems } from '../../../shared/hooks/useRecordActionItems'
 import type { VaultRecord } from '../../../shared/utils/groupRecordsByTimePeriod'
+import { useCreateOrEditRecord } from '../../hooks/useCreateOrEditRecord'
 
 export const RECORD_ROW_CONTEXT_MENU_WIDTH = 220
 const VIEWPORT_MARGIN = 8
@@ -58,20 +58,12 @@ export const RecordRowContextMenu = ({
   onSelectItem
 }: RecordRowContextMenuProps) => {
   const { theme } = useTheme()
-  const { navigate } = useRouter() as {
-    navigate: (
-      page: string,
-      opts?: {
-        params?: Record<string, unknown>
-        state?: Record<string, unknown>
-      }
-    ) => void
-  }
   const { setModal } = useModal()
   const { actions } = useRecordActionItems({ record }) as {
     actions: RecordAction[]
   }
   const { createRecord } = useCreateRecord()
+  const { handleCreateOrEditRecord } = useCreateOrEditRecord()
 
   const close = useCallback(() => onOpenChange(false), [onOpenChange])
 
@@ -79,8 +71,9 @@ export const RecordRowContextMenu = ({
 
   const handleEdit = () => {
     close()
-    navigate('createOrEditCategory', {
-      params: { recordType: record.type, recordId: record.id }
+    handleCreateOrEditRecord({
+      recordType: record.type,
+      initialRecord: record
     })
   }
 

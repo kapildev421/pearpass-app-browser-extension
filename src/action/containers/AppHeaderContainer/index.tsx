@@ -17,14 +17,12 @@ import {
 
 import { AppHeaderAddItemTrigger, AppHeaderV2 } from '../AppHeaderV2'
 import { ImportItemOrVaultModalContentV2 } from '../../../shared/containers/ImportItemOrVaultModalContentV2'
-import { PasswordGeneratorModalContent } from '../../../shared/containers/PasswordGeneratorModalContent'
 import { useAppHeaderContext } from '../../../shared/context/AppHeaderContext'
 import { useModal } from '../../../shared/context/ModalContext'
 import { useRouter } from '../../../shared/context/RouterContext'
-import { useToast } from '../../../shared/context/ToastContext'
-import { useCopyToClipboard } from '../../../shared/hooks/useCopyToClipboard'
 import { useRecordMenuItemsV2 } from '../../../shared/hooks/useRecordMenuItemsV2'
 import { isFavorite } from '../../../shared/utils/isFavorite'
+import { useCreateOrEditRecord } from '../../hooks/useCreateOrEditRecord'
 
 const ADD_MENU_WIDTH = 220
 
@@ -63,22 +61,8 @@ export const AppHeaderContainer = () => {
     setIsSidebarCollapsed
   } = useAppHeaderContext()
   const { defaultItems } = useRecordMenuItemsV2()
-  const { setModal, closeModal } = useModal()
-  const { setToast } = useToast() as {
-    setToast: (toast: { message: string }) => void
-  }
-  const { copyToClipboard } = useCopyToClipboard({
-    onCopy: () => {
-      setToast({ message: t`Copied to clipboard` })
-    }
-  }) as {
-    copyToClipboard: (text: string) => boolean
-  }
-
-  const handlePasswordCopy = (value: string) => {
-    copyToClipboard(value)
-    closeModal()
-  }
+  const { setModal } = useModal()
+  const { handleCreateOrEditRecord } = useCreateOrEditRecord()
 
   if (currentPage !== 'vault') {
     return null
@@ -108,13 +92,7 @@ export const AppHeaderContainer = () => {
     setIsAddMenuOpen(false)
 
     if (type === PASSWORD_TYPE) {
-      setModal(
-        <PasswordGeneratorModalContent
-          actionLabel={t`Copy and close`}
-          onActionClick={handlePasswordCopy}
-          onClose={closeModal}
-        />
-      )
+      handleCreateOrEditRecord({ recordType: 'password' })
       return
     }
 
@@ -123,12 +101,10 @@ export const AppHeaderContainer = () => {
       return
     }
 
-    navigate('createOrEditCategory', {
-      params: {
-        recordType: type,
-        ...(selectedFolder ? { folder: selectedFolder } : {}),
-        ...(isFavoritesView ? { isFavorite: true } : {})
-      }
+    handleCreateOrEditRecord({
+      recordType: type,
+      selectedFolder,
+      isFavorite: isFavoritesView || undefined
     })
   }
 
