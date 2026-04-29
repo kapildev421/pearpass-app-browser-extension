@@ -8,6 +8,7 @@ import {
   Form,
   InputField,
   MultiSlotInput,
+  PasswordField,
   Text,
   useTheme
 } from '@tetherto/pearpass-lib-ui-kit'
@@ -100,7 +101,9 @@ export const CreateOrEditPassPhraseModalContentV2 = ({
       title: initialRecord?.data?.title ?? '',
       passPhrase: initialRecord?.data?.passPhrase ?? '',
       note: initialRecord?.data?.note ?? '',
-      customFields: initialRecord?.data?.customFields ?? [],
+      customFields: initialRecord?.data?.customFields?.length
+        ? initialRecord.data.customFields
+        : [{ type: 'note', note: '' }],
       folder: selectedFolder ?? initialRecord?.folder ?? ''
     },
     validate: (formValues: Record<string, unknown>) => {
@@ -220,21 +223,7 @@ export const CreateOrEditPassPhraseModalContentV2 = ({
             {t`Additional`}
           </Text>
 
-          <MultiSlotInput
-            testID="createoredit-passphrase-v2-comments-slot"
-            actions={
-              <Button
-                variant="tertiary"
-                size="small"
-                type="button"
-                iconBefore={<Add width={16} height={16} />}
-                onClick={() => addCustomField({ type: 'note', note: '' })}
-                data-testid="createoredit-passphrase-v2-add-comment"
-              >
-                {t`Add Another Note`}
-              </Button>
-            }
-          >
+          <MultiSlotInput testID="createoredit-passphrase-v2-comment-slot">
             <InputField
               label={t`Comment`}
               placeholder={t`Enter Comment`}
@@ -243,18 +232,34 @@ export const CreateOrEditPassPhraseModalContentV2 = ({
               error={noteField.error || undefined}
               testID="createoredit-passphrase-v2-comment"
             />
+          </MultiSlotInput>
 
+          <MultiSlotInput
+            testID="createoredit-passphrase-v2-hiddenmessage-slot"
+            actions={
+              <Button
+                variant="tertiary"
+                size="small"
+                type="button"
+                iconBefore={<Add width={16} height={16} />}
+                onClick={() => addCustomField({ type: 'note', note: '' })}
+                data-testid="createoredit-passphrase-v2-add-message"
+              >
+                {t`Add Another Message`}
+              </Button>
+            }
+          >
             {(customFieldsList as Array<{ id: string }>).map((field, index) => {
               const fieldReg = registerCustomFieldItem('note', index)
               return (
-                <InputField
+                <PasswordField
                   key={field.id}
-                  label={t`Comment`}
-                  placeholder={t`Enter Comment`}
+                  label={t`Hidden Message`}
+                  placeholder={t`Enter Hidden Message`}
                   value={fieldReg.value as string}
                   onChange={(e) => fieldReg.onChange(e.target.value)}
                   error={fieldReg.error || undefined}
-                  testID={`createoredit-passphrase-v2-customcomment-${index}`}
+                  testID={`createoredit-passphrase-v2-hiddenmessage-${index}`}
                   rightSlot={
                     <Button
                       variant="tertiary"
@@ -269,7 +274,7 @@ export const CreateOrEditPassPhraseModalContentV2 = ({
                         />
                       }
                       onClick={() => removeCustomFieldItem(index)}
-                      data-testid={`createoredit-passphrase-v2-remove-customcomment-${index}`}
+                      data-testid={`createoredit-passphrase-v2-remove-hiddenmessage-${index}`}
                     />
                   }
                 />

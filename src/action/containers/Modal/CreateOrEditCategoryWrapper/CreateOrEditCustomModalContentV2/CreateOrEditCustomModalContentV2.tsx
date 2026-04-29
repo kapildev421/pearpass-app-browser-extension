@@ -7,6 +7,7 @@ import {
   Form,
   InputField,
   MultiSlotInput,
+  PasswordField,
   Text,
   useTheme
 } from '@tetherto/pearpass-lib-ui-kit'
@@ -31,6 +32,7 @@ export type CreateOrEditCustomModalContentV2Props = {
     type?: string
     data?: {
       title?: string
+      note?: string
       customFields?: CustomField[]
       attachments?: { id: string; name: string }[]
     }
@@ -74,6 +76,7 @@ export const CreateOrEditCustomModalContentV2 = ({
 
   const schema = Validator.object({
     title: Validator.string().required(t`Title is required`),
+    note: Validator.string(),
     customFields: Validator.array().items(
       Validator.object({
         note: Validator.string()
@@ -85,6 +88,7 @@ export const CreateOrEditCustomModalContentV2 = ({
   const { register, handleSubmit, registerArray } = useForm({
     initialValues: {
       title: initialRecord?.data?.title ?? '',
+      note: initialRecord?.data?.note ?? '',
       customFields: initialRecord?.data?.customFields?.length
         ? initialRecord.data.customFields
         : [{ type: 'note', note: '' }],
@@ -102,6 +106,7 @@ export const CreateOrEditCustomModalContentV2 = ({
   } = registerArray('customFields')
 
   const titleField = register('title')
+  const noteField = register('note')
 
   const onSubmit = (formValues: Record<string, unknown>) => {
     const data = {
@@ -111,6 +116,7 @@ export const CreateOrEditCustomModalContentV2 = ({
       data: {
         ...(initialRecord?.data ?? {}),
         title: formValues.title,
+        note: formValues.note,
         customFields: ((formValues.customFields as CustomField[]) ?? []).filter(
           (f) => f.note?.trim().length
         ),
@@ -174,8 +180,19 @@ export const CreateOrEditCustomModalContentV2 = ({
             {t`Additional`}
           </Text>
 
+          <MultiSlotInput testID="createoredit-custom-v2-comment-slot">
+            <InputField
+              label={t`Comment`}
+              placeholder={t`Enter Comment`}
+              value={noteField.value as string}
+              onChange={(e) => noteField.onChange(e.target.value)}
+              error={noteField.error || undefined}
+              testID="createoredit-custom-v2-comment"
+            />
+          </MultiSlotInput>
+
           <MultiSlotInput
-            testID="createoredit-custom-v2-comment-slot"
+            testID="createoredit-custom-v2-hiddenmessage-slot"
             actions={
               <Button
                 variant="tertiary"
@@ -183,9 +200,9 @@ export const CreateOrEditCustomModalContentV2 = ({
                 type="button"
                 iconBefore={<Add width={16} height={16} />}
                 onClick={() => addCustomField({ type: 'note', note: '' })}
-                data-testid="createoredit-custom-v2-add-comment"
+                data-testid="createoredit-custom-v2-add-message"
               >
-                {t`Add Another Comment`}
+                {t`Add Another Message`}
               </Button>
             }
           >
@@ -194,14 +211,14 @@ export const CreateOrEditCustomModalContentV2 = ({
               const canRemove =
                 (customFieldsList as Array<{ id: string }>).length > 1
               return (
-                <InputField
+                <PasswordField
                   key={field.id}
-                  label={t`Comment`}
-                  placeholder={t`Enter Comment`}
+                  label={t`Hidden Message`}
+                  placeholder={t`Enter Hidden Message`}
                   value={fieldReg.value as string}
                   onChange={(e) => fieldReg.onChange(e.target.value)}
                   error={fieldReg.error || undefined}
-                  testID={`createoredit-custom-v2-comment-${index}`}
+                  testID={`createoredit-custom-v2-hiddenmessage-${index}`}
                   rightSlot={
                     canRemove ? (
                       <Button
@@ -217,7 +234,7 @@ export const CreateOrEditCustomModalContentV2 = ({
                           />
                         }
                         onClick={() => removeCustomFieldItem(index)}
-                        data-testid={`createoredit-custom-v2-remove-comment-${index}`}
+                        data-testid={`createoredit-custom-v2-remove-hiddenmessage-${index}`}
                       />
                     ) : undefined
                   }
