@@ -3,10 +3,12 @@ import React, { useEffect, useRef } from 'react'
 import { t } from '@lingui/core/macro'
 import { RECORD_TYPES, useRecords } from '@tetherto/pearpass-lib-vault'
 
+import { useCreateOrEditRecord } from '../../action/hooks/useCreateOrEditRecord'
 import { useModal } from '../../shared/context/ModalContext'
 import { useRouter } from '../../shared/context/RouterContext'
 import { isV2 } from '../../shared/utils/designVersion'
 import { ConfirmationModalContent } from '../containers/ConfirmationModalContent'
+import { DeleteRecordsModalContentV2 } from '../containers/DeleteRecordsModalContentV2'
 import { MoveFolderModalContent } from '../containers/MoveFolderModalContent'
 import { MoveFolderModalContentV2 } from '../containers/MoveFolderModalContentV2'
 
@@ -15,6 +17,7 @@ import { MoveFolderModalContentV2 } from '../containers/MoveFolderModalContentV2
  *  excludeTypes?: Array<string>
  *  record: {
  *    id: string
+ *    type?: string
  *    isFavorite?: boolean
  *  }
  *  onSelect?: () => void
@@ -38,6 +41,7 @@ export const useRecordActionItems = ({
   const { setModal, closeModal } = useModal()
   const { params, navigate } = useRouter()
   const { deleteRecords, updateFavoriteState, data: records } = useRecords()
+  const { handleCreateOrEditRecord } = useCreateOrEditRecord()
   const pendingDeleteId = useRef(null)
 
   // Close modal only if record was successfully deleted
@@ -71,14 +75,18 @@ export const useRecordActionItems = ({
 
   const handleDelete = () => {
     setModal(
-      <ConfirmationModalContent
-        title={t`Are you sure to delete this item?`}
-        text={t`This is permanent and cannot be undone`}
-        primaryLabel={t`No`}
-        secondaryLabel={t`Yes`}
-        secondaryAction={handleDeleteConfirm}
-        primaryAction={closeModal}
-      />
+      isV2() ? (
+        <DeleteRecordsModalContentV2 records={[record]} />
+      ) : (
+        <ConfirmationModalContent
+          title={t`Are you sure to delete this item?`}
+          text={t`This is permanent and cannot be undone`}
+          primaryLabel={t`No`}
+          secondaryLabel={t`Yes`}
+          secondaryAction={handleDeleteConfirm}
+          primaryAction={closeModal}
+        />
+      )
     )
     onClose?.()
   }
@@ -104,6 +112,15 @@ export const useRecordActionItems = ({
     onClose?.()
   }
 
+  const handleEdit = () => {
+    handleCreateOrEditRecord({
+      recordType: record?.type,
+      initialRecord: record,
+      source: params?.source
+    })
+    onClose?.()
+  }
+
   const defaultActions = [
     {
       name: t`Select element`,
@@ -114,6 +131,11 @@ export const useRecordActionItems = ({
       name: record?.isFavorite ? t`Remove from Favorites` : t`Mark as favorite`,
       type: 'favorite',
       click: handleFavoriteToggle
+    },
+    {
+      name: t`Edit`,
+      type: 'edit',
+      click: handleEdit
     },
     {
       name: t`Move to another folder`,

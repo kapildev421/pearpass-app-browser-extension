@@ -22,6 +22,7 @@ import {
   useRecords
 } from '@tetherto/pearpass-lib-vault'
 
+import { FolderDropdownV2 } from '../../../FolderDropdownV2'
 import { useGlobalLoading } from '../../../../../shared/context/LoadingContext'
 import { useModal } from '../../../../../shared/context/ModalContext'
 import { useToast } from '../../../../../shared/context/ToastContext'
@@ -93,7 +94,7 @@ export const CreateOrEditWifiModalContentV2 = ({
     folder: Validator.string()
   })
 
-  const { register, handleSubmit, registerArray, setValue } = useForm({
+  const { register, handleSubmit, registerArray, setValue, values } = useForm({
     initialValues: {
       title: initialRecord?.data?.title ?? '',
       password: initialRecord?.data?.password ?? '',
@@ -193,7 +194,7 @@ export const CreateOrEditWifiModalContentV2 = ({
             testID="createoredit-wifi-v2-credentials-slot"
             actions={
               <Button
-                variant="tertiary"
+                variant="tertiaryAccent"
                 size="small"
                 type="button"
                 iconBefore={<SyncLock width={16} height={16} />}
@@ -225,6 +226,14 @@ export const CreateOrEditWifiModalContentV2 = ({
           <Text variant="caption" color={theme.colors.colorTextSecondary}>
             {t`Additional`}
           </Text>
+
+          <FolderDropdownV2
+            selectedFolder={values?.folder as string | undefined}
+            onFolderSelect={(name) =>
+              setValue('folder', name === values.folder ? '' : name)
+            }
+            testIDPrefix="createoredit-wifi-v2-folder"
+          />
 
           <InputField
             label={t`Comment`}

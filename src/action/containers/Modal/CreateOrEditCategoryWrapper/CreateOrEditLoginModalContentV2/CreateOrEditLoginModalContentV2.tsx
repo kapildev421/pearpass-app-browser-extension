@@ -6,33 +6,28 @@ import { Validator } from '@tetherto/pear-apps-utils-validator'
 import { AUTHENTICATOR_ENABLED } from '@tetherto/pearpass-lib-constants'
 import {
   Button,
-  ContextMenu,
   Dialog,
   Form,
   InputField,
   MultiSlotInput,
-  NavbarListItem,
   PasswordField,
-  SelectField,
+  type PasswordIndicatorVariant,
   Text,
   useTheme
 } from '@tetherto/pearpass-lib-ui-kit'
+import { checkPasswordStrength } from '@tetherto/pearpass-utils-password-check'
 import {
   Add,
-  CreateNewFolder,
-  Folder,
-  KeyboardArrowBottom,
   SyncLock,
   TrashOutlined
 } from '@tetherto/pearpass-lib-ui-kit/icons'
 import {
   RECORD_TYPES,
   useCreateRecord,
-  useFolders,
   useRecords
 } from '@tetherto/pearpass-lib-vault'
 
-import { CreateFolderModalContentV2 } from '../../../../../shared/containers/CreateFolderModalContentV2'
+import { FolderDropdownV2 } from '../../../FolderDropdownV2'
 import { useGlobalLoading } from '../../../../../shared/context/LoadingContext'
 import { useModal } from '../../../../../shared/context/ModalContext'
 import { useToast } from '../../../../../shared/context/ToastContext'
@@ -42,6 +37,12 @@ import { useCreateOrEditRecord } from '../../../../hooks/useCreateOrEditRecord'
 
 type Website = { website?: string; name?: string }
 type CustomField = { type: string; name: string; note?: string }
+
+const STRENGTH_MAP: Record<string, PasswordIndicatorVariant> = {
+  error: 'vulnerable',
+  warning: 'decent',
+  success: 'strong'
+}
 
 export type CreateOrEditLoginModalContentV2Props = {
   initialRecord?: {
@@ -76,7 +77,7 @@ export const CreateOrEditLoginModalContentV2 = ({
   mode
 }: CreateOrEditLoginModalContentV2Props) => {
   const isAuthenticatorMode = mode === 'authenticator'
-  const { closeModal, setModal } = useModal()
+  const { closeModal } = useModal()
   const { setToast } = useToast()
   const { theme } = useTheme()
   const { handleCreateOrEditRecord } = useCreateOrEditRecord()
@@ -96,14 +97,6 @@ export const CreateOrEditLoginModalContentV2 = ({
       setToast({ message: t`Record updated successfully`, icon: null })
     }
   })
-
-  const { data: folders } = useFolders()
-
-  const folderOptions = useMemo(() => {
-    const customFolders =
-      (folders?.customFolders as Record<string, { name: string }>) ?? {}
-    return Object.values(customFolders).map((f) => f.name)
-  }, [folders])
 
   const onError = (error: { message: string }) => {
     setToast({ message: error.message, icon: null })
@@ -174,6 +167,17 @@ export const CreateOrEditLoginModalContentV2 = ({
   const otpSecretField = register('otpSecret')
   const noteField = register('note')
 
+  const passwordIndicator = useMemo<
+    PasswordIndicatorVariant | undefined
+  >(() => {
+    const value = passwordField.value as string
+    if (!value?.length) return undefined
+    const result = checkPasswordStrength(value) as unknown as {
+      strengthType: string
+    }
+    return STRENGTH_MAP[result.strengthType]
+  }, [passwordField.value])
+
   const onSubmit = (formValues: Record<string, unknown>) => {
     const otpInput = ((formValues.otpSecret as string)?.trim() || undefined) as
       | string
@@ -214,55 +218,6 @@ export const CreateOrEditLoginModalContentV2 = ({
       setValue: (value: string) => setValue('password', value)
     })
   }
-
-  const handleFolderSelect = (name?: string) => {
-    if (!name) return
-    setValue('folder', name === values.folder ? '' : name)
-  }
-
-  const handleCreateFolder = () => {
-    setModal(
-      <CreateFolderModalContentV2
-        onClose={closeModal}
-        onCreate={(folderName: string) => handleFolderSelect(folderName)}
-      />
-    )
-  }
-
-  const folderSelectorContent = (
-    <>
-      {folderOptions.map((name) => (
-        <NavbarListItem
-          key={name}
-          icon={
-            <Folder
-              width={16}
-              height={16}
-              color={theme.colors.colorTextPrimary}
-            />
-          }
-          iconSize={16}
-          label={name}
-          selected={values?.folder === name}
-          onClick={() => handleFolderSelect(name)}
-          testID={`createoredit-login-v2-folder-option-${name}`}
-        />
-      ))}
-      <NavbarListItem
-        icon={
-          <CreateNewFolder
-            width={16}
-            height={16}
-            color={theme.colors.colorTextPrimary}
-          />
-        }
-        iconSize={16}
-        label={t`Add New Folder`}
-        onClick={handleCreateFolder}
-        testID="createoredit-login-v2-folder-create"
-      />
-    </>
-  )
 
   return (
     <Dialog
@@ -327,7 +282,7 @@ export const CreateOrEditLoginModalContentV2 = ({
                 testID="createoredit-login-v2-credentials-slot"
                 actions={
                   <Button
-                    variant="tertiary"
+                    variant="tertiaryAccent"
                     size="small"
                     type="button"
                     iconBefore={<SyncLock width={16} height={16} />}
@@ -352,6 +307,7 @@ export const CreateOrEditLoginModalContentV2 = ({
                   value={passwordField.value as string}
                   onChange={(e) => passwordField.onChange(e.target.value)}
                   error={passwordField.error || undefined}
+                  passwordIndicator={passwordIndicator}
                   testID="createoredit-login-v2-password"
                 />
               </MultiSlotInput>
@@ -420,7 +376,7 @@ export const CreateOrEditLoginModalContentV2 = ({
                         rightSlot={
                           index > 0 ? (
                             <Button
-                              variant="tertiary"
+                              variant="tertiaryAccent"
                               size="small"
                               type="button"
                               aria-label={t`Remove website`}
@@ -442,26 +398,13 @@ export const CreateOrEditLoginModalContentV2 = ({
                 )}
               </MultiSlotInput>
 
-              <ContextMenu
-                fullWidth
-                trigger={
-                  <MultiSlotInput testID="createoredit-login-v2-folder-slot">
-                    <SelectField
-                      label={t`Folder`}
-                      value={(values?.folder as string) ?? ''}
-                      placeholder={t`Choose Folder`}
-                      testID="createoredit-login-v2-folder"
-                      rightSlot={
-                        <KeyboardArrowBottom
-                          color={theme.colors.colorTextPrimary}
-                        />
-                      }
-                    />
-                  </MultiSlotInput>
+              <FolderDropdownV2
+                selectedFolder={values?.folder as string | undefined}
+                onFolderSelect={(name) =>
+                  setValue('folder', name === values.folder ? '' : name)
                 }
-              >
-                {folderSelectorContent}
-              </ContextMenu>
+                testIDPrefix="createoredit-login-v2-folder"
+              />
             </>
           ) : null}
 
@@ -515,7 +458,7 @@ export const CreateOrEditLoginModalContentV2 = ({
                       rightSlot={
                         canRemove ? (
                           <Button
-                            variant="tertiary"
+                            variant="tertiaryAccent"
                             size="small"
                             type="button"
                             aria-label={t`Remove`}
