@@ -18,7 +18,9 @@ import { CollapseIcon } from '../../../shared/icons/CollapseIcon'
 import { FolderIcon } from '../../../shared/icons/FolderIcon'
 import { KebabMenuIcon } from '../../../shared/icons/KebabMenuIcon'
 import { StarIcon } from '../../../shared/icons/StarIcon'
+import { isV2 } from '../../../shared/utils/designVersion'
 import { RecordDetailsContent } from '../../containers/RecordDetails/RecordDetailsContent'
+import { RecordDetailsV2 } from '../../containers/RecordDetails/RecordDetailsV2'
 import { useCreateOrEditRecord } from '../../hooks/useCreateOrEditRecord'
 
 export const RecordDetails = () => {
@@ -33,7 +35,7 @@ export const RecordDetails = () => {
   const { updateFavoriteState } = useRecords()
 
   const { actions } = useRecordActionItems({
-    excludeTypes: ['select', 'pin'],
+    excludeTypes: ['select', 'pin', 'edit'],
     record: record,
     onClose: () => setIsOpen(false)
   })
@@ -64,6 +66,10 @@ export const RecordDetails = () => {
 
   if (!record) {
     return null
+  }
+
+  if (isV2()) {
+    return <RecordDetailsV2 />
   }
 
   const recordColorClass = RECORD_COLOR_BY_TYPE[record?.type]

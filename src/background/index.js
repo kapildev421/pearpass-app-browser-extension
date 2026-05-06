@@ -1,6 +1,9 @@
 import './nativeMessaging'
 
-import { ensureClientKeypairUnlocked } from './clientKeyStore'
+import {
+  ensureClientKeypairUnlocked,
+  commitPendingClientKeystore
+} from './clientKeyStore'
 import { MESSAGES, ALARMS } from './constants'
 import { secureChannel } from './secureChannel'
 import * as CredentialGenerator from './utils/credentialGenerator'
@@ -472,6 +475,22 @@ runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true
     }
 
+    case SECURE_MESSAGE_TYPES.COMMIT_CLIENT_KEYSTORE: {
+      void (async () => {
+        try {
+          await commitPendingClientKeystore()
+          sendResponse({ success: true })
+        } catch (e) {
+          sendResponse({
+            success: false,
+            error: e?.message,
+            code: ERROR_CODES.UNKNOWN
+          })
+        }
+      })()
+      return true
+    }
+
     case SECURE_MESSAGE_TYPES.GET_BLOCKING_STATE: {
       void (async () => {
         try {
@@ -647,7 +666,10 @@ const openPasskeyWindow = (queryParams = new URLSearchParams()) => {
 
   chrome.windows.create({
     focused: true,
-    height: passkeyWindowSize.height,
+    height:
+      passkeyWindowSize.height ??
+      passkeyWindowSize.initialHeight ??
+      passkeyWindowSize.minHeight,
     width: passkeyWindowSize.width,
     url: runtime.getURL(`index.html#/${page}?${queryParams.toString()}`),
     type: 'popup'

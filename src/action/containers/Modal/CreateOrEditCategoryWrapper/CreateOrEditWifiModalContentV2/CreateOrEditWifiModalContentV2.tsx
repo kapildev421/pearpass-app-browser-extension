@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 import { t } from '@lingui/core/macro'
 import { useForm } from '@tetherto/pear-apps-lib-ui-react-hooks'
 import { Validator } from '@tetherto/pear-apps-utils-validator'
@@ -8,9 +10,11 @@ import {
   InputField,
   MultiSlotInput,
   PasswordField,
+  type PasswordIndicatorVariant,
   Text,
   useTheme
 } from '@tetherto/pearpass-lib-ui-kit'
+import { checkPasswordStrength } from '@tetherto/pearpass-utils-password-check'
 import {
   Add,
   SyncLock,
@@ -22,12 +26,19 @@ import {
   useRecords
 } from '@tetherto/pearpass-lib-vault'
 
+import { FolderDropdownV2 } from '../../../FolderDropdownV2'
 import { useGlobalLoading } from '../../../../../shared/context/LoadingContext'
 import { useModal } from '../../../../../shared/context/ModalContext'
 import { useToast } from '../../../../../shared/context/ToastContext'
 import { useCreateOrEditRecord } from '../../../../hooks/useCreateOrEditRecord'
 
 type CustomField = { type: string; name?: string; note?: string }
+
+const STRENGTH_MAP: Record<string, PasswordIndicatorVariant> = {
+  error: 'vulnerable',
+  warning: 'decent',
+  success: 'strong'
+}
 
 export type CreateOrEditWifiModalContentV2Props = {
   initialRecord?: {
@@ -93,7 +104,7 @@ export const CreateOrEditWifiModalContentV2 = ({
     folder: Validator.string()
   })
 
-  const { register, handleSubmit, registerArray, setValue } = useForm({
+  const { register, handleSubmit, registerArray, setValue, values } = useForm({
     initialValues: {
       title: initialRecord?.data?.title ?? '',
       password: initialRecord?.data?.password ?? '',
@@ -117,6 +128,18 @@ export const CreateOrEditWifiModalContentV2 = ({
   const titleField = register('title')
   const passwordField = register('password')
   const noteField = register('note')
+
+  const passwordIndicator = useMemo<
+    PasswordIndicatorVariant | undefined
+  >(() => {
+    const value = (values?.password as string) ?? ''
+    if (!value.length) return undefined
+    const result = checkPasswordStrength(value) as unknown as {
+      strengthType?: string
+    } | null
+    if (!result?.strengthType) return undefined
+    return STRENGTH_MAP[result.strengthType]
+  }, [values?.password])
 
   const onSubmit = (formValues: Record<string, unknown>) => {
     const data = {
@@ -170,7 +193,12 @@ export const CreateOrEditWifiModalContentV2 = ({
             variant="primary"
             size="small"
             type="button"
-            disabled={isLoading}
+            disabled={
+              isLoading ||
+              (!isEdit &&
+                (!(values?.title as string)?.trim() ||
+                  !(values?.password as string)?.trim()))
+            }
             isLoading={isLoading}
             onClick={() => handleSubmit(onSubmit)()}
             data-testid="createoredit-wifi-v2-save"
@@ -193,7 +221,7 @@ export const CreateOrEditWifiModalContentV2 = ({
             testID="createoredit-wifi-v2-credentials-slot"
             actions={
               <Button
-                variant="tertiary"
+                variant="tertiaryAccent"
                 size="small"
                 type="button"
                 iconBefore={<SyncLock width={16} height={16} />}
@@ -218,6 +246,7 @@ export const CreateOrEditWifiModalContentV2 = ({
               value={passwordField.value as string}
               onChange={(e) => passwordField.onChange(e.target.value)}
               error={passwordField.error || undefined}
+              passwordIndicator={passwordIndicator}
               testID="createoredit-wifi-v2-password"
             />
           </MultiSlotInput>
@@ -225,6 +254,14 @@ export const CreateOrEditWifiModalContentV2 = ({
           <Text variant="caption" color={theme.colors.colorTextSecondary}>
             {t`Additional`}
           </Text>
+
+          <FolderDropdownV2
+            selectedFolder={values?.folder as string | undefined}
+            onFolderSelect={(name) =>
+              setValue('folder', name === values.folder ? '' : name)
+            }
+            testIDPrefix="createoredit-wifi-v2-folder"
+          />
 
           <InputField
             label={t`Comment`}

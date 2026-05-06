@@ -11,7 +11,7 @@ import {
   useTheme
 } from '@tetherto/pearpass-lib-ui-kit'
 import { ContentCopy } from '@tetherto/pearpass-lib-ui-kit/icons'
-import { useInvite } from '@tetherto/pearpass-lib-vault'
+import { useInvite, useVault } from '@tetherto/pearpass-lib-vault'
 
 import { useAutoLockPreferences } from '../../../hooks/useAutoLockPreferences'
 import { useModal } from '../../context/ModalContext'
@@ -24,6 +24,7 @@ export const AddDeviceModalContent = () => {
 
   const [qrSvg, setQrSvg] = useState('')
   const { createInvite, deleteInvite, data } = useInvite()
+  const { data: activeVault } = useVault()
   const { setShouldBypassAutoLock } = useAutoLockPreferences() as {
     setShouldBypassAutoLock: (v: boolean) => void
   }
@@ -63,9 +64,11 @@ export const AddDeviceModalContent = () => {
 
   const displayLink = isCopied ? t`Copied!` : (data?.publicKey ?? '')
 
+  const vaultName = activeVault?.name ?? t`Vault`
+
   return (
     <Dialog
-      title={t`Share Personal Vault`}
+      title={t`Share ${vaultName}`}
       onClose={closeModal}
       testID="add-device-dialog"
       closeButtonTestID="add-device-close"
@@ -77,7 +80,7 @@ export const AddDeviceModalContent = () => {
         <div className="bg-surface-primary border-border-primary box-border flex flex-col items-stretch rounded-[8px] border">
           <div className="mt-[24px] mb-[16px] flex items-center justify-center">
             <div
-              className="bg-surface-hover box-border flex h-[160px] w-[160px] items-center justify-center rounded-[8px] p-[10px]"
+              className="bg-text-primary box-border flex h-[160px] w-[160px] items-center justify-center rounded-[8px] p-[10px]"
               dangerouslySetInnerHTML={{ __html: qrSvg }}
             />
           </div>

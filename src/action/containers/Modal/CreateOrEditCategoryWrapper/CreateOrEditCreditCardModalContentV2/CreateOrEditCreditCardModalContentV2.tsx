@@ -19,6 +19,7 @@ import {
   useRecords
 } from '@tetherto/pearpass-lib-vault'
 
+import { FolderDropdownV2 } from '../../../FolderDropdownV2'
 import { useGlobalLoading } from '../../../../../shared/context/LoadingContext'
 import { useModal } from '../../../../../shared/context/ModalContext'
 import { useToast } from '../../../../../shared/context/ToastContext'
@@ -167,7 +168,7 @@ export const CreateOrEditCreditCardModalContentV2 = ({
 
   return (
     <Dialog
-      title={isEdit ? t`Edit Credit Card` : t`New Credit Card`}
+      title={isEdit ? t`Edit Credit Card Item` : t`New Credit Card Item`}
       onClose={closeModal}
       testID="createoredit-creditcard-dialog-v2"
       closeButtonTestID="createoredit-creditcard-close-v2"
@@ -186,7 +187,9 @@ export const CreateOrEditCreditCardModalContentV2 = ({
             variant="primary"
             size="small"
             type="button"
-            disabled={isLoading}
+            disabled={
+              isLoading || (!isEdit && !(values?.title as string)?.trim())
+            }
             isLoading={isLoading}
             onClick={() => handleSubmit(onSubmit)()}
             data-testid="createoredit-creditcard-v2-save"
@@ -211,12 +214,12 @@ export const CreateOrEditCreditCardModalContentV2 = ({
           />
 
           <Text variant="caption" color={theme.colors.colorTextSecondary}>
-            {t`Card Details`}
+            {t`Details`}
           </Text>
 
           <MultiSlotInput testID="createoredit-creditcard-v2-details-slot">
             <InputField
-              label={t`Name on card`}
+              label={t`Cardholder Name`}
               placeholder={t`Enter Name`}
               value={nameField.value as string}
               onChange={(e) => nameField.onChange(e.target.value)}
@@ -224,7 +227,7 @@ export const CreateOrEditCreditCardModalContentV2 = ({
               testID="createoredit-creditcard-v2-name"
             />
             <InputField
-              label={t`Number on card`}
+              label={t`Card Number`}
               placeholder={t`Enter Card Number`}
               value={values.number as string}
               onChange={(e) =>
@@ -233,7 +236,7 @@ export const CreateOrEditCreditCardModalContentV2 = ({
               testID="createoredit-creditcard-v2-number"
             />
             <DateField
-              label={t`Date of expire`}
+              label={t`Expiration Date`}
               placeholder={t`MM YY`}
               value={values.expireDate as string}
               onChange={(e) =>
@@ -243,7 +246,7 @@ export const CreateOrEditCreditCardModalContentV2 = ({
               testID="createoredit-creditcard-v2-expiredate"
             />
             <PasswordField
-              label={t`Security code`}
+              label={t`Security Code`}
               placeholder={t`Enter Security Code`}
               value={securityCodeField.value as string}
               onChange={(e) =>
@@ -253,7 +256,7 @@ export const CreateOrEditCreditCardModalContentV2 = ({
               testID="createoredit-creditcard-v2-securitycode"
             />
             <PasswordField
-              label={t`Pin code`}
+              label={t`PIN`}
               placeholder={t`Enter PIN`}
               value={pinCodeField.value as string}
               onChange={(e) =>
@@ -267,6 +270,14 @@ export const CreateOrEditCreditCardModalContentV2 = ({
           <Text variant="caption" color={theme.colors.colorTextSecondary}>
             {t`Additional`}
           </Text>
+
+          <FolderDropdownV2
+            selectedFolder={values?.folder as string | undefined}
+            onFolderSelect={(name) =>
+              setValue('folder', name === values.folder ? '' : name)
+            }
+            testIDPrefix="createoredit-creditcard-v2-folder"
+          />
 
           <InputField
             label={t`Comment`}

@@ -21,7 +21,8 @@ const PAIRING_ERROR_MESSAGES = {
   FAILED_TO_GET_IDENTITY:
     'Failed to get identity. Please ensure the desktop app is running.',
   PAIRING_FAILED: 'Pairing failed',
-  INVALID_PASSWORD: 'Invalid master password. Please try again.'
+  INVALID_PASSWORD:
+    'Invalid master password. Pairing was reset, returning to onboarding...'
 }
 
 /**
@@ -53,7 +54,12 @@ export const useDesktopPairing = ({
   const [identity, setIdentity] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [passwordError, setPasswordError] = useState(null)
   const [hydrated, setHydrated] = useState(false)
+
+  const clearPasswordError = () => {
+    if (passwordError) setPasswordError(null)
+  }
 
   useEffect(() => {
     if (!hydrateFromStore) {
@@ -208,9 +214,19 @@ export const useDesktopPairing = ({
       throw new Error(PAIRING_ERROR_MESSAGES.PAIRING_FAILED)
     }
 
-    // Validate password and initialize vaults
-    await logIn({ password })
-    await initVaults({ password })
+    // Validate password via vault, then commit the keystore. Roll back on
+    // failure so a wrong password never persists pairing state or keystore.
+    // Also drop the pending token: it has been consumed by confirmPair and
+    // the user must start again from the onboarding token-entry step.
+    try {
+      await logIn({ password })
+      await initVaults({ password })
+      await secureChannelMessages.commitClientKeystore()
+    } catch (err) {
+      await secureChannelMessages.unpair()
+      await pendingPairingStore.clear()
+      throw err
+    }
 
     await pendingPairingStore.clear()
     setToast({ message: t`Paired successfully!` })
@@ -234,6 +250,7 @@ export const useDesktopPairing = ({
     }
 
     setLoading(true)
+    setPasswordError(null)
     try {
       const validatedIdentity = await revalidateIdentity()
       if (!validatedIdentity) return
@@ -244,11 +261,16 @@ export const useDesktopPairing = ({
       await finalizePairing(validatedIdentity, password)
     } catch (error) {
       logger.error('Failed to complete pairing:', error)
-      const message =
+      const isPairingFailed =
         error.message === PAIRING_ERROR_MESSAGES.PAIRING_FAILED
-          ? t(PAIRING_ERROR_MESSAGES.PAIRING_FAILED)
-          : t(PAIRING_ERROR_MESSAGES.INVALID_PASSWORD)
-      setToast({ message })
+      const message = isPairingFailed
+        ? t`Pairing failed`
+        : t`Invalid master password. Pairing was reset, returning to onboarding...`
+      if (isPairingFailed) {
+        setToast({ message })
+      } else {
+        setPasswordError(message)
+      }
     } finally {
       setLoading(false)
     }
@@ -260,6 +282,8 @@ export const useDesktopPairing = ({
     identity,
     loading,
     error,
+    passwordError,
+    clearPasswordError,
     hydrated,
     fetchIdentity,
     completePairing

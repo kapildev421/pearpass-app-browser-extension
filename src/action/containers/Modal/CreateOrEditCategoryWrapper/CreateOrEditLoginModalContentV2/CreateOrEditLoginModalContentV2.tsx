@@ -6,33 +6,30 @@ import { Validator } from '@tetherto/pear-apps-utils-validator'
 import { AUTHENTICATOR_ENABLED } from '@tetherto/pearpass-lib-constants'
 import {
   Button,
-  ContextMenu,
   Dialog,
   Form,
   InputField,
   MultiSlotInput,
-  NavbarListItem,
   PasswordField,
-  SelectField,
+  type PasswordIndicatorVariant,
   Text,
+  rawTokens,
   useTheme
 } from '@tetherto/pearpass-lib-ui-kit'
+import { checkPasswordStrength } from '@tetherto/pearpass-utils-password-check'
 import {
   Add,
-  CreateNewFolder,
-  Folder,
-  KeyboardArrowBottom,
+  ArrowBackOutined,
   SyncLock,
   TrashOutlined
 } from '@tetherto/pearpass-lib-ui-kit/icons'
 import {
   RECORD_TYPES,
   useCreateRecord,
-  useFolders,
   useRecords
 } from '@tetherto/pearpass-lib-vault'
 
-import { CreateFolderModalContentV2 } from '../../../../../shared/containers/CreateFolderModalContentV2'
+import { FolderDropdownV2 } from '../../../FolderDropdownV2'
 import { useGlobalLoading } from '../../../../../shared/context/LoadingContext'
 import { useModal } from '../../../../../shared/context/ModalContext'
 import { useToast } from '../../../../../shared/context/ToastContext'
@@ -42,6 +39,12 @@ import { useCreateOrEditRecord } from '../../../../hooks/useCreateOrEditRecord'
 
 type Website = { website?: string; name?: string }
 type CustomField = { type: string; name: string; note?: string }
+
+const STRENGTH_MAP: Record<string, PasswordIndicatorVariant> = {
+  error: 'vulnerable',
+  warning: 'decent',
+  success: 'strong'
+}
 
 export type CreateOrEditLoginModalContentV2Props = {
   initialRecord?: {
@@ -67,16 +70,23 @@ export type CreateOrEditLoginModalContentV2Props = {
   selectedFolder?: string
   isFavorite?: boolean
   mode?: 'authenticator'
+  onSaved?: (savedRecordId?: string) => void
+  fullScreen?: boolean
+  onClose?: () => void
 }
 
 export const CreateOrEditLoginModalContentV2 = ({
   initialRecord,
   selectedFolder,
   isFavorite,
-  mode
+  mode,
+  onSaved,
+  fullScreen,
+  onClose
 }: CreateOrEditLoginModalContentV2Props) => {
   const isAuthenticatorMode = mode === 'authenticator'
-  const { closeModal, setModal } = useModal()
+  const { closeModal } = useModal()
+  const handleClose = onClose ?? (() => void closeModal())
   const { setToast } = useToast()
   const { theme } = useTheme()
   const { handleCreateOrEditRecord } = useCreateOrEditRecord()
@@ -84,7 +94,10 @@ export const CreateOrEditLoginModalContentV2 = ({
   const isEdit = !!initialRecord?.id
 
   const { createRecord, isLoading: isCreateLoading } = useCreateRecord({
-    onCompleted: () => {
+    onCompleted: (payload: unknown) => {
+      const recordId = (payload as { record?: { id?: string } } | undefined)
+        ?.record?.id
+      onSaved?.(recordId)
       void closeModal()
       setToast({ message: t`Record created successfully`, icon: null })
     }
@@ -92,18 +105,11 @@ export const CreateOrEditLoginModalContentV2 = ({
 
   const { updateRecords, isLoading: isUpdateLoading } = useRecords({
     onCompleted: () => {
+      onSaved?.(initialRecord?.id)
       void closeModal()
       setToast({ message: t`Record updated successfully`, icon: null })
     }
   })
-
-  const { data: folders } = useFolders()
-
-  const folderOptions = useMemo(() => {
-    const customFolders =
-      (folders?.customFolders as Record<string, { name: string }>) ?? {}
-    return Object.values(customFolders).map((f) => f.name)
-  }, [folders])
 
   const onError = (error: { message: string }) => {
     setToast({ message: error.message, icon: null })
@@ -174,6 +180,17 @@ export const CreateOrEditLoginModalContentV2 = ({
   const otpSecretField = register('otpSecret')
   const noteField = register('note')
 
+  const passwordIndicator = useMemo<
+    PasswordIndicatorVariant | undefined
+  >(() => {
+    const value = passwordField.value as string
+    if (!value?.length) return undefined
+    const result = checkPasswordStrength(value) as unknown as {
+      strengthType: string
+    }
+    return STRENGTH_MAP[result.strengthType]
+  }, [passwordField.value])
+
   const onSubmit = (formValues: Record<string, unknown>) => {
     const otpInput = ((formValues.otpSecret as string)?.trim() || undefined) as
       | string
@@ -215,330 +232,332 @@ export const CreateOrEditLoginModalContentV2 = ({
     })
   }
 
-  const handleFolderSelect = (name?: string) => {
-    if (!name) return
-    setValue('folder', name === values.folder ? '' : name)
-  }
+  const dialogTitle = isAuthenticatorMode
+    ? isEdit
+      ? t`Edit Authenticator Code Item`
+      : t`New Authenticator Code Item`
+    : isEdit
+      ? t`Edit Login Item`
+      : t`New Login Item`
 
-  const handleCreateFolder = () => {
-    setModal(
-      <CreateFolderModalContentV2
-        onClose={closeModal}
-        onCreate={(folderName: string) => handleFolderSelect(folderName)}
-      />
-    )
-  }
-
-  const folderSelectorContent = (
-    <>
-      {folderOptions.map((name) => (
-        <NavbarListItem
-          key={name}
-          icon={
-            <Folder
-              width={16}
-              height={16}
-              color={theme.colors.colorTextPrimary}
-            />
-          }
-          iconSize={16}
-          label={name}
-          selected={values?.folder === name}
-          onClick={() => handleFolderSelect(name)}
-          testID={`createoredit-login-v2-folder-option-${name}`}
-        />
-      ))}
-      <NavbarListItem
-        icon={
-          <CreateNewFolder
-            width={16}
-            height={16}
-            color={theme.colors.colorTextPrimary}
-          />
-        }
-        iconSize={16}
-        label={t`Add New Folder`}
-        onClick={handleCreateFolder}
-        testID="createoredit-login-v2-folder-create"
-      />
-    </>
+  const dialogFooter = (
+    <div className="flex w-full justify-end gap-[var(--spacing8)]">
+      <Button
+        variant="secondary"
+        size="small"
+        type="button"
+        onClick={handleClose}
+        data-testid="createoredit-login-v2-discard"
+      >
+        {t`Discard`}
+      </Button>
+      <Button
+        variant="primary"
+        size="small"
+        type="button"
+        disabled={isLoading || (!isEdit && !(values?.title as string)?.trim())}
+        isLoading={isLoading}
+        onClick={() => handleSubmit(onSubmit)()}
+        data-testid="createoredit-login-v2-save"
+      >
+        {isEdit ? t`Save` : t`Add Item`}
+      </Button>
+    </div>
   )
 
-  return (
-    <Dialog
-      title={
-        isAuthenticatorMode
-          ? isEdit
-            ? t`Edit Authenticator Code Item`
-            : t`New Authenticator Code Item`
-          : isEdit
-            ? t`Edit Login Item`
-            : t`New Login Item`
-      }
-      onClose={closeModal}
-      testID="createoredit-login-dialog-v2"
-      closeButtonTestID="createoredit-login-close-v2"
-      footer={
-        <div className="flex w-full justify-end gap-[var(--spacing8)]">
-          <Button
-            variant="secondary"
-            size="small"
-            type="button"
-            onClick={closeModal}
-            data-testid="createoredit-login-v2-discard"
-          >
-            {t`Discard`}
-          </Button>
-          <Button
-            variant="primary"
-            size="small"
-            type="button"
-            disabled={isLoading}
-            isLoading={isLoading}
-            onClick={() => handleSubmit(onSubmit)()}
-            data-testid="createoredit-login-v2-save"
-          >
-            {isEdit ? t`Save` : t`Add Item`}
-          </Button>
-        </div>
-      }
+  const renderBody = () => (
+    <Form
+      testID="createoredit-login-v2-form"
+      aria-label={isEdit ? t`Edit login form` : t`New login form`}
     >
-      <Form
-        testID="createoredit-login-v2-form"
-        aria-label={isEdit ? t`Edit login form` : t`New login form`}
-      >
-        <div className="flex flex-col gap-[var(--spacing16)]">
-          <InputField
-            label={t`Title`}
-            placeholder={t`Enter Title`}
-            value={titleField.value as string}
-            onChange={(e) => titleField.onChange(e.target.value)}
-            error={titleField.error || undefined}
-            testID="createoredit-login-v2-title"
-          />
+      <div className="flex flex-col gap-[var(--spacing16)]">
+        <InputField
+          label={t`Title`}
+          placeholder={t`Enter Title`}
+          value={titleField.value as string}
+          onChange={(e) => titleField.onChange(e.target.value)}
+          error={titleField.error || undefined}
+          testID="createoredit-login-v2-title"
+        />
 
-          {!isAuthenticatorMode ? (
-            <>
-              <Text variant="caption" color={theme.colors.colorTextSecondary}>
-                {t`Credentials`}
-              </Text>
+        {!isAuthenticatorMode ? (
+          <>
+            <Text variant="caption" color={theme.colors.colorTextSecondary}>
+              {t`Credentials`}
+            </Text>
 
-              <MultiSlotInput
-                testID="createoredit-login-v2-credentials-slot"
-                actions={
-                  <Button
-                    variant="tertiary"
-                    size="small"
-                    type="button"
-                    iconBefore={<SyncLock width={16} height={16} />}
-                    onClick={handleGeneratePassword}
-                    data-testid="createoredit-login-v2-generate-password"
-                  >
-                    {t`Generate Password`}
-                  </Button>
-                }
-              >
-                <InputField
-                  label={t`Email / Username`}
-                  placeholder={t`Enter Email / Username`}
-                  value={usernameField.value as string}
-                  onChange={(e) => usernameField.onChange(e.target.value)}
-                  error={usernameField.error || undefined}
-                  testID="createoredit-login-v2-username"
-                />
-                <PasswordField
-                  label={t`Password`}
-                  placeholder={t`Enter Password`}
-                  value={passwordField.value as string}
-                  onChange={(e) => passwordField.onChange(e.target.value)}
-                  error={passwordField.error || undefined}
-                  testID="createoredit-login-v2-password"
-                />
-              </MultiSlotInput>
-            </>
-          ) : null}
-
-          {AUTHENTICATOR_ENABLED || isAuthenticatorMode ? (
-            <MultiSlotInput testID="createoredit-login-v2-authenticator-slot">
+            <MultiSlotInput
+              testID="createoredit-login-v2-credentials-slot"
+              actions={
+                <Button
+                  variant="tertiaryAccent"
+                  size="small"
+                  type="button"
+                  iconBefore={<SyncLock width={16} height={16} />}
+                  onClick={handleGeneratePassword}
+                  data-testid="createoredit-login-v2-generate-password"
+                >
+                  {t`Generate Password`}
+                </Button>
+              }
+            >
+              <InputField
+                label={t`Email / Username`}
+                placeholder={t`Enter Email / Username`}
+                value={usernameField.value as string}
+                onChange={(e) => usernameField.onChange(e.target.value)}
+                error={usernameField.error || undefined}
+                testID="createoredit-login-v2-username"
+              />
               <PasswordField
-                label={t`Authenticator Secret Key`}
-                placeholder={t`Enter Secret Key (TOTP)`}
-                value={otpSecretField.value as string}
-                onChange={(e) => otpSecretField.onChange(e.target.value)}
-                error={otpSecretField.error || undefined}
-                testID="createoredit-login-v2-otpsecret"
+                label={t`Password`}
+                placeholder={t`Enter Password`}
+                value={passwordField.value as string}
+                onChange={(e) => passwordField.onChange(e.target.value)}
+                error={passwordField.error || undefined}
+                passwordIndicator={passwordIndicator}
+                testID="createoredit-login-v2-password"
               />
             </MultiSlotInput>
-          ) : null}
+          </>
+        ) : null}
 
-          {!isAuthenticatorMode && values?.credential ? (
-            <InputField
-              label={t`Passkey`}
-              value={
-                formatPasskeyDate(values.passkeyCreatedAt as number) ||
-                t`Passkey Stored`
-              }
-              placeholder=""
-              disabled
-              testID="createoredit-login-v2-passkey"
-            />
-          ) : null}
-
-          {!isAuthenticatorMode ? (
-            <>
-              <Text variant="caption" color={theme.colors.colorTextSecondary}>
-                {t`Details`}
-              </Text>
-
-              <MultiSlotInput
-                testID="createoredit-login-v2-websites-slot"
-                actions={
-                  <Button
-                    variant="tertiaryAccent"
-                    size="small"
-                    type="button"
-                    iconBefore={<Add width={16} height={16} />}
-                    onClick={() => addWebsite({ name: 'website' })}
-                    data-testid="createoredit-login-v2-add-website"
-                  >
-                    {t`Add Another Website`}
-                  </Button>
-                }
-              >
-                {(websitesList as Array<{ id: string }>).map(
-                  (website, index) => {
-                    const websiteField = registerWebsiteItem('website', index)
-                    return (
-                      <InputField
-                        key={website.id}
-                        label={t`Website`}
-                        placeholder={t`Enter Website`}
-                        value={websiteField.value as string}
-                        onChange={(e) => websiteField.onChange(e.target.value)}
-                        error={websiteField.error || undefined}
-                        testID={`createoredit-login-v2-website-${index}`}
-                        rightSlot={
-                          index > 0 ? (
-                            <Button
-                              variant="tertiary"
-                              size="small"
-                              type="button"
-                              aria-label={t`Remove website`}
-                              iconBefore={
-                                <TrashOutlined
-                                  width={16}
-                                  height={16}
-                                  color={theme.colors.colorTextPrimary}
-                                />
-                              }
-                              onClick={() => removeWebsite(index)}
-                              data-testid={`createoredit-login-v2-remove-website-${index}`}
-                            />
-                          ) : undefined
-                        }
-                      />
-                    )
-                  }
-                )}
-              </MultiSlotInput>
-
-              <ContextMenu
-                fullWidth
-                trigger={
-                  <MultiSlotInput testID="createoredit-login-v2-folder-slot">
-                    <SelectField
-                      label={t`Folder`}
-                      value={(values?.folder as string) ?? ''}
-                      placeholder={t`Choose Folder`}
-                      testID="createoredit-login-v2-folder"
-                      rightSlot={
-                        <KeyboardArrowBottom
-                          color={theme.colors.colorTextPrimary}
-                        />
-                      }
-                    />
-                  </MultiSlotInput>
-                }
-              >
-                {folderSelectorContent}
-              </ContextMenu>
-            </>
-          ) : null}
-
-          <Text variant="caption" color={theme.colors.colorTextSecondary}>
-            {t`Additional`}
-          </Text>
-
-          <MultiSlotInput testID="createoredit-login-v2-comment-slot">
-            <InputField
-              label={t`Comment`}
-              placeholder={t`Enter Comment`}
-              value={noteField.value as string}
-              onChange={(e) => noteField.onChange(e.target.value)}
-              error={noteField.error || undefined}
-              testID="createoredit-login-v2-comment"
+        {AUTHENTICATOR_ENABLED || isAuthenticatorMode ? (
+          <MultiSlotInput testID="createoredit-login-v2-authenticator-slot">
+            <PasswordField
+              label={t`Authenticator Secret Key`}
+              placeholder={t`Enter Secret Key (TOTP)`}
+              value={otpSecretField.value as string}
+              onChange={(e) => otpSecretField.onChange(e.target.value)}
+              error={otpSecretField.error || undefined}
+              testID="createoredit-login-v2-otpsecret"
             />
           </MultiSlotInput>
+        ) : null}
 
-          {!isAuthenticatorMode ? (
+        {!isAuthenticatorMode && values?.credential ? (
+          <InputField
+            label={t`Passkey`}
+            value={
+              formatPasskeyDate(values.passkeyCreatedAt as number) ||
+              t`Passkey Stored`
+            }
+            placeholder=""
+            disabled
+            testID="createoredit-login-v2-passkey"
+          />
+        ) : null}
+
+        {!isAuthenticatorMode ? (
+          <>
+            <Text variant="caption" color={theme.colors.colorTextSecondary}>
+              {t`Details`}
+            </Text>
+
             <MultiSlotInput
-              testID="createoredit-login-v2-hiddenmessages-slot"
+              testID="createoredit-login-v2-websites-slot"
               actions={
                 <Button
                   variant="tertiaryAccent"
                   size="small"
                   type="button"
                   iconBefore={<Add width={16} height={16} />}
-                  onClick={() =>
-                    addCustomField({ type: 'note', name: 'note', note: '' })
-                  }
-                  data-testid="createoredit-login-v2-add-comment"
+                  onClick={() => addWebsite({ name: 'website' })}
+                  data-testid="createoredit-login-v2-add-website"
                 >
-                  {t`Add Another Message`}
+                  {t`Add Another Website`}
                 </Button>
               }
             >
-              {(customFieldsList as Array<{ id: string }>).map(
-                (field, index) => {
-                  const fieldReg = registerCustomFieldItem('note', index)
-                  const canRemove =
-                    (customFieldsList as Array<{ id: string }>).length > 1
-                  return (
-                    <PasswordField
-                      key={field.id}
-                      label={t`Hidden Message`}
-                      placeholder={t`Enter Hidden Message`}
-                      value={fieldReg.value as string}
-                      onChange={(e) => fieldReg.onChange(e.target.value)}
-                      error={fieldReg.error || undefined}
-                      testID={`createoredit-login-v2-hiddenmessage-${index}`}
-                      rightSlot={
-                        canRemove ? (
-                          <Button
-                            variant="tertiary"
-                            size="small"
-                            type="button"
-                            aria-label={t`Remove`}
-                            iconBefore={
-                              <TrashOutlined
-                                width={16}
-                                height={16}
-                                color={theme.colors.colorTextPrimary}
-                              />
-                            }
-                            onClick={() => removeCustomFieldItem(index)}
-                            data-testid={`createoredit-login-v2-remove-hiddenmessage-${index}`}
-                          />
-                        ) : undefined
-                      }
-                    />
-                  )
-                }
-              )}
+              {(websitesList as Array<{ id: string }>).map((website, index) => {
+                const websiteField = registerWebsiteItem('website', index)
+                return (
+                  <InputField
+                    key={website.id}
+                    label={t`Website`}
+                    placeholder={t`Enter Website`}
+                    value={websiteField.value as string}
+                    onChange={(e) => websiteField.onChange(e.target.value)}
+                    error={websiteField.error || undefined}
+                    testID={`createoredit-login-v2-website-${index}`}
+                    rightSlot={
+                      index > 0 ? (
+                        <Button
+                          variant="tertiaryAccent"
+                          size="small"
+                          type="button"
+                          aria-label={t`Remove website`}
+                          iconBefore={
+                            <TrashOutlined
+                              width={16}
+                              height={16}
+                              color={theme.colors.colorTextPrimary}
+                            />
+                          }
+                          onClick={() => removeWebsite(index)}
+                          data-testid={`createoredit-login-v2-remove-website-${index}`}
+                        />
+                      ) : undefined
+                    }
+                  />
+                )
+              })}
             </MultiSlotInput>
-          ) : null}
+
+            <FolderDropdownV2
+              selectedFolder={values?.folder as string | undefined}
+              onFolderSelect={(name) =>
+                setValue('folder', name === values.folder ? '' : name)
+              }
+              testIDPrefix="createoredit-login-v2-folder"
+            />
+          </>
+        ) : null}
+
+        <Text variant="caption" color={theme.colors.colorTextSecondary}>
+          {t`Additional`}
+        </Text>
+
+        <MultiSlotInput testID="createoredit-login-v2-comment-slot">
+          <InputField
+            label={t`Comment`}
+            placeholder={t`Enter Comment`}
+            value={noteField.value as string}
+            onChange={(e) => noteField.onChange(e.target.value)}
+            error={noteField.error || undefined}
+            testID="createoredit-login-v2-comment"
+          />
+        </MultiSlotInput>
+
+        {!isAuthenticatorMode ? (
+          <MultiSlotInput
+            testID="createoredit-login-v2-hiddenmessages-slot"
+            actions={
+              <Button
+                variant="tertiaryAccent"
+                size="small"
+                type="button"
+                iconBefore={<Add width={16} height={16} />}
+                onClick={() =>
+                  addCustomField({ type: 'note', name: 'note', note: '' })
+                }
+                data-testid="createoredit-login-v2-add-comment"
+              >
+                {t`Add Another Message`}
+              </Button>
+            }
+          >
+            {(customFieldsList as Array<{ id: string }>).map((field, index) => {
+              const fieldReg = registerCustomFieldItem('note', index)
+              const canRemove =
+                (customFieldsList as Array<{ id: string }>).length > 1
+              return (
+                <PasswordField
+                  key={field.id}
+                  label={t`Hidden Message`}
+                  placeholder={t`Enter Hidden Message`}
+                  value={fieldReg.value as string}
+                  onChange={(e) => fieldReg.onChange(e.target.value)}
+                  error={fieldReg.error || undefined}
+                  testID={`createoredit-login-v2-hiddenmessage-${index}`}
+                  rightSlot={
+                    canRemove ? (
+                      <Button
+                        variant="tertiaryAccent"
+                        size="small"
+                        type="button"
+                        aria-label={t`Remove`}
+                        iconBefore={
+                          <TrashOutlined
+                            width={16}
+                            height={16}
+                            color={theme.colors.colorTextPrimary}
+                          />
+                        }
+                        onClick={() => removeCustomFieldItem(index)}
+                        data-testid={`createoredit-login-v2-remove-hiddenmessage-${index}`}
+                      />
+                    ) : undefined
+                  }
+                />
+              )
+            })}
+          </MultiSlotInput>
+        ) : null}
+      </div>
+    </Form>
+  )
+
+  if (fullScreen) {
+    return (
+      <div
+        data-testid="createoredit-login-fullscreen-v2"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          height: '100%',
+          backgroundColor: theme.colors.colorSurfacePrimary
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: `${rawTokens.spacing12}px`,
+            paddingBlock: `${rawTokens.spacing12}px`,
+            paddingInline: `${rawTokens.spacing16}px`,
+            borderBottom: `1px solid ${theme.colors.colorBorderPrimary}`,
+            flexShrink: 0
+          }}
+        >
+          <Button
+            variant="tertiary"
+            size="small"
+            type="button"
+            aria-label={t`Back`}
+            iconBefore={
+              <ArrowBackOutined color={theme.colors.colorTextPrimary} />
+            }
+            onClick={handleClose}
+            data-testid="createoredit-login-v2-back"
+          />
+          <div style={{ flex: 1 }}>
+            <Text>{dialogTitle}</Text>
+          </div>
         </div>
-      </Form>
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: `${rawTokens.spacing16}px`
+          }}
+        >
+          {renderBody()}
+        </div>
+        <div
+          style={{
+            paddingBlock: `${rawTokens.spacing12}px`,
+            paddingInline: `${rawTokens.spacing16}px`,
+            borderTop: `1px solid ${theme.colors.colorBorderPrimary}`,
+            flexShrink: 0
+          }}
+        >
+          {dialogFooter}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <Dialog
+      title={dialogTitle}
+      onClose={handleClose}
+      testID="createoredit-login-dialog-v2"
+      closeButtonTestID="createoredit-login-close-v2"
+      footer={dialogFooter}
+    >
+      {renderBody()}
     </Dialog>
   )
 }
