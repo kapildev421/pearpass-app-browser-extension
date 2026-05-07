@@ -27,19 +27,22 @@ jobs:
           repository: ${{ inputs.checkout_repository }}
           persist-credentials: false
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: 22
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@tetherto'
 
-      - name: Rewrite git+ssh deps to https
+      - name: Install worker dependencies
         run: |
           git config --global url."https://github.com/".insteadOf git@github.com:
           git config --global url."https://".insteadOf ssh://
-
-      - name: Install dependencies
-        run: npm ci --install-links --legacy-peer-deps
+          git config --global url."https://${{ secrets.PAT_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+          npm install --install-links --legacy-peer-deps
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PAT_TOKEN }}
 
       - name: Run ESLint
         run: npm run lint
