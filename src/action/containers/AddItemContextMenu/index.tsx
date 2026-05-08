@@ -8,9 +8,10 @@ import {
   useTheme
 } from '@tetherto/pearpass-lib-ui-kit'
 import { Key, QrCode } from '@tetherto/pearpass-lib-ui-kit/icons'
+import { RECORD_TYPES } from '@tetherto/pearpass-lib-vault'
+
 import { useRecordMenuItemsV2 } from '../../../shared/hooks/useRecordMenuItemsV2'
 import { useCreateOrEditRecord } from '../../hooks/useCreateOrEditRecord'
-import { RECORD_TYPES } from '@tetherto/pearpass-lib-vault'
 
 const ADD_MENU_WIDTH = 220
 const PASSWORD_TYPE = '__password__'

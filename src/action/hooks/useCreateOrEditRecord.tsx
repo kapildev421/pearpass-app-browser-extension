@@ -18,7 +18,6 @@ const SUPPORTED_V2_TYPES = new Set<string>([
   RECORD_TYPES.PASS_PHRASE
 ])
 
-// the LOGIN form with a narrowed field set (Title + OTP secret + Comments).
 const PASSWORD_TYPE = 'password'
 
 export type CreateOrEditRecordOptions = {
