@@ -141,8 +141,8 @@ export const useRecordActionItems = ({
         confirmText={t`Are you sure you want to remove the authenticator code from this login record?`}
         submitLabel={t`Remove`}
         onConfirm={async () => {
-          const { otpInput, otp, ...restData } = record?.data ?? {}
-          const { otpPublic, ...recordWithoutOtp } = record ?? {}
+          const { otpInput, otp, ...restData } = record.data
+          const { otpPublic, ...recordWithoutOtp } = record
           const updatedRecord = { ...recordWithoutOtp, data: restData }
           try {
             await updateRecords([updatedRecord])
@@ -150,7 +150,6 @@ export const useRecordActionItems = ({
             setToast({
               message: err?.message ?? t`Failed to remove authenticator code`
             })
-            throw err
           }
         }}
       />

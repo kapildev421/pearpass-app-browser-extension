@@ -72,6 +72,8 @@ export const DeleteRecordsModalContentV2 = ({
         await onConfirm()
         onCompleted?.()
         closeModal()
+      } catch {
+        // onConfirm handles user feedback; keep modal open on failure
       } finally {
         setConfirmLoading(false)
         setIsLoading(false)

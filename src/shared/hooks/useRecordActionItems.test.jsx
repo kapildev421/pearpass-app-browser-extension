@@ -412,7 +412,7 @@ describe('useRecordActionItems', () => {
       expect(updated.data.title).toBe('My Account')
     })
 
-    test('onConfirm calls setToast and rethrows when updateRecords fails', async () => {
+    test('onConfirm calls setToast and resolves when updateRecords fails', async () => {
       useRouter.mockReturnValue({
         params: {},
         navigate: mockNavigate,
@@ -430,7 +430,7 @@ describe('useRecordActionItems', () => {
 
       result.current.actions[4].click()
       const [element] = mockSetModal.mock.calls[0]
-      await expect(element.props.onConfirm()).rejects.toThrow('network error')
+      await expect(element.props.onConfirm()).resolves.toBeUndefined()
       expect(mockSetToast).toHaveBeenCalledWith({ message: 'network error' })
     })
   })

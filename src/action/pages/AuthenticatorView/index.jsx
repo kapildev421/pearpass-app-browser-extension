@@ -56,11 +56,8 @@ export const AuthenticatorView = () => {
     handleCreateOrEditRecord({
       recordType: RECORD_TYPES.OTP,
       mode: 'authenticator',
-      onSaved: async () => {
-        await refetchUserData()
-        await refetchMasterVault()
-        await refetchVault()
-      }
+      onSaved: () =>
+        Promise.all([refetchUserData(), refetchMasterVault(), refetchVault()])
     })
   }
 
@@ -89,6 +86,7 @@ export const AuthenticatorView = () => {
               <button
                 type="button"
                 onClick={handleAddCode}
+                data-testid="authenticator-empty-add-code"
                 className="bg-primary400-mode1 text-black-mode1 flex w-full items-center justify-center gap-1 rounded-lg py-2.5 text-sm font-medium"
               >
                 <PlusIcon size="16" color="#050B06" />
