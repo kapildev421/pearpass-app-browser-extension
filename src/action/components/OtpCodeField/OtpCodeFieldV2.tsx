@@ -16,7 +16,8 @@ const TIMER_ANIMATION_DURATION = 1000
 
 const useTypedTimerAnimation = useTimerAnimation as (
   timeRemaining: number | null,
-  period: number
+  period: number,
+  animated?: boolean
 ) => { noTransition: boolean; expiring: boolean; targetTime: number }
 
 interface OtpCodeFieldV2Props {

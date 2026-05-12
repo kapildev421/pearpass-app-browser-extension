@@ -20,12 +20,16 @@ import {
 } from '@tetherto/pearpass-lib-ui-kit/icons'
 import {
   formatOtpCode,
-  // @ts-expect-error - exported at runtime but not in package typings
+  // @ts-expect-error - groupOtpRecords is exported at runtime but absent from the package's main type declarations
   groupOtpRecords,
   isExpiring,
   useFolders,
   useRecords
 } from '@tetherto/pearpass-lib-vault'
+import type {
+  OtpGroupResult,
+  OtpPublic
+} from '@tetherto/pearpass-lib-vault/src/types'
 
 import { createStyles } from './styles'
 import { EmptyResultsViewV2 } from '../../containers/EmptyResultsViewV2'
@@ -44,22 +48,14 @@ import { RecordItemIcon } from '../../../shared/containers/RecordItemIcon'
 import { useAppHeaderContext } from '../../../shared/context/AppHeaderContext'
 import { useModal } from '../../../shared/context/ModalContext'
 import { getRecordSubtitle } from '../../../shared/utils/getRecordSubtitle'
+import type { VaultRecord } from '../../../shared/utils/groupRecordsByTimePeriod'
 import { useCopyToClipboard } from '../../../shared/hooks/useCopyToClipboard'
 
 const SORT_MENU_WIDTH = 260
 
-type OtpRecord = {
-  id: string
-  type: string
-  folder?: string
-  isFavorite?: boolean
-  data?: { title?: string; username?: string }
-  otpPublic?: {
-    type: 'TOTP' | 'HOTP'
-    period?: number
-    currentCode?: string | null
-    timeRemaining?: number | null
-  }
+type OtpRecord = VaultRecord & {
+  folder?: string | null
+  otpPublic?: OtpPublic
 }
 
 export const AuthenticatorView = () => {
@@ -99,14 +95,15 @@ export const AuthenticatorView = () => {
     [records]
   )
 
-  const { totpGroups, hotpRecords } = useMemo(
-    () =>
-      groupOtpRecords(otpRecords) as unknown as {
-        totpGroups: { period: number; records: OtpRecord[] }[]
-        hotpRecords: OtpRecord[]
-      },
+  const groupResult = useMemo<OtpGroupResult>(
+    () => groupOtpRecords(otpRecords),
     [otpRecords]
   )
+  const totpGroups = groupResult.totpGroups as {
+    period: number
+    records: OtpRecord[]
+  }[]
+  const hotpRecords = groupResult.hotpRecords as OtpRecord[]
 
   const selectedRecordsSet = useMemo(
     () => new Set(selectedRecords),
@@ -183,11 +180,7 @@ export const AuthenticatorView = () => {
     if (!selectedCount) return
     setModal(
       <MoveFolderModalContentV2
-        records={
-          selectedRecordObjects as unknown as Parameters<
-            typeof MoveFolderModalContentV2
-          >[0]['records']
-        }
+        records={selectedRecordObjects}
         onCompleted={exitMultiSelect}
       />
     )
@@ -197,11 +190,7 @@ export const AuthenticatorView = () => {
     if (!selectedCount) return
     setModal(
       <DeleteRecordsModalContentV2
-        records={
-          selectedRecordObjects as unknown as Parameters<
-            typeof DeleteRecordsModalContentV2
-          >[0]['records']
-        }
+        records={selectedRecordObjects}
         onCompleted={exitMultiSelect}
       />
     )
@@ -292,17 +281,7 @@ export const AuthenticatorView = () => {
   const hasDetailsPane = !!selectedRecordId && !isMultiSelectOn
 
   const listPane = (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
-        minWidth: 0,
-        minHeight: 0,
-        backgroundColor: theme.colors.colorSurfacePrimary,
-        overflow: 'hidden'
-      }}
-    >
+    <div style={styles.listPane}>
       <div style={styles.headerContainer}>
         <div style={styles.breadcrumbWrapper}>
           <Breadcrumb
@@ -319,7 +298,7 @@ export const AuthenticatorView = () => {
                       : t`Toggle multi-select`
                   }
                   aria-pressed={isMultiSelectOn}
-                  onClick={() => setIsMultiSelectOn(!isMultiSelectOn)}
+                  onClick={() => setIsMultiSelectOn((prev) => !prev)}
                   iconBefore={<Checklist color={iconColor} />}
                 />
                 <ContextMenu
@@ -373,18 +352,7 @@ export const AuthenticatorView = () => {
       {!hasRecords && !!searchValue ? (
         <EmptyResultsViewV2 />
       ) : !hasRecords ? (
-        <div
-          style={{
-            display: 'flex',
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: theme.colors.colorTextSecondary,
-            padding: '24px',
-            textAlign: 'center'
-          }}
-          data-testid="authenticator-empty-state"
-        >
+        <div style={styles.emptyState} data-testid="authenticator-empty-state">
           <Text variant="label" color={theme.colors.colorTextSecondary}>
             {t`No codes saved`}
           </Text>
@@ -414,11 +382,11 @@ export const AuthenticatorView = () => {
                     />
                     <span>
                       {t`Codes expiring in`}{' '}
-                      <strong style={{ color: timerColor, fontWeight: 600 }}>
+                      <Text variant="labelEmphasized" color={timerColor}>
                         {timeRemaining !== null
                           ? `${timeRemaining}s`
                           : `${period}s`}
-                      </strong>
+                      </Text>
                     </span>
                   </div>
                   <div style={listStyles.sectionList}>
@@ -446,33 +414,10 @@ export const AuthenticatorView = () => {
 
   if (hasDetailsPane) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          flex: 1,
-          minHeight: 0
-        }}
-      >
+      <div style={styles.detailsWrapper}>
         {listPane}
-        <div
-          style={{
-            width: '1px',
-            backgroundColor: theme.colors.colorBorderPrimary,
-            flexShrink: 0
-          }}
-          role="separator"
-          aria-hidden="true"
-        />
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            minWidth: 0,
-            minHeight: 0
-          }}
-        >
+        <div style={styles.separator} role="separator" aria-hidden="true" />
+        <div style={styles.detailsPane}>
           <RecordDetailsV2
             recordId={selectedRecordId ?? undefined}
             onClose={() => setSelectedRecordId(null)}

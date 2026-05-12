@@ -1,6 +1,7 @@
 import type { ThemeColors } from '@tetherto/pearpass-lib-ui-kit'
 import { rawTokens } from '@tetherto/pearpass-lib-ui-kit'
 
+// 44 px is the standard minimum tap/click target; no exact token maps to this value
 const HEADER_MIN_HEIGHT = 44
 
 export const createStyles = (colors: ThemeColors) => ({
@@ -45,5 +46,40 @@ export const createStyles = (colors: ThemeColors) => ({
     userSelect: 'none' as const,
     color: colors.colorTextPrimary,
     width: '100%'
+  },
+  listPane: {
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+    backgroundColor: colors.colorSurfacePrimary,
+    overflow: 'hidden' as const
+  },
+  emptyState: {
+    display: 'flex' as const,
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    padding: `${rawTokens.spacing24}px`,
+    textAlign: 'center' as const
+  },
+  detailsWrapper: {
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    flex: 1,
+    minHeight: 0
+  },
+  separator: {
+    width: '1px',
+    backgroundColor: colors.colorBorderPrimary,
+    flexShrink: 0
+  },
+  detailsPane: {
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0
   }
 })
